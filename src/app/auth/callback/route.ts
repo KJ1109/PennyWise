@@ -17,7 +17,7 @@ export async function GET(request: Request) {
             }
         }
         // Redirect with error message if exchange failed
-        return NextResponse.redirect(`${origin}/auth/auth-code-error?error=${encodeURIComponent(error.message)}`)
+        return NextResponse.redirect(`${origin}/auth/auth-code-error?error=${encodeURIComponent(error?.message || 'Unknown Error')}`)
     }
 
     // Default error if no code
