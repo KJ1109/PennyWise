@@ -137,6 +137,7 @@ function CursorTrail() {
                     count={PARTICLE_COUNT}
                     array={posArray}
                     itemSize={3}
+                    args={[posArray, 3]}
                 />
                 <bufferAttribute
                     attach="attributes-size"
