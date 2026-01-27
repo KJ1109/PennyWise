@@ -128,7 +128,7 @@ export default function SettingsPage() {
     if (loading) return <div className="p-8 text-foreground">Loading settings...</div>
 
     return (
-        <main className="flex-1 w-full h-screen overflow-y-auto flex flex-col gap-8 p-4 pb-20 md:p-8">
+        <main className="flex-1 w-full min-h-screen flex flex-col gap-8 p-4 pb-24 md:pb-8">
             <div>
                 <h1 className="text-3xl font-bold text-foreground">Settings</h1>
                 <p className="text-muted-foreground">Manage your profile and preferences.</p>

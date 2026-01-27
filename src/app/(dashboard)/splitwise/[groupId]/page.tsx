@@ -93,7 +93,7 @@ export default async function GroupDetailPage({
     const settlements = simplifyDebts(balances)
 
     return (
-        <main className="flex-1 w-full h-screen overflow-y-auto flex flex-col p-4 md:p-6">
+        <main className="flex-1 w-full min-h-screen flex flex-col p-4 md:p-6 pb-24 md:pb-6">
             {/* Back Navigation */}
             <div className="mb-4">
                 <Link href="/splitwise" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 blue:text-gray-400 blue:hover:text-white">
@@ -124,10 +124,10 @@ export default async function GroupDetailPage({
             </div>
 
             {/* 3-Column Layout -> 2-Panel Layout (Left Sidebar + Main Content) */}
-            <div className="flex flex-col xl:grid xl:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-[600px]">
+            <div className="flex flex-col xl:grid xl:grid-cols-12 gap-6 h-auto xl:h-[calc(100vh-140px)]">
 
                 {/* Left Panel: Net Balance & Members (3 cols) */}
-                <div className="xl:col-span-3 h-full overflow-hidden">
+                <div className="xl:col-span-3 h-auto xl:h-full">
                     <GroupNetBalance
                         members={members}
                         balances={balances}
@@ -137,17 +137,17 @@ export default async function GroupDetailPage({
                 </div>
 
                 {/* Main Content: Middle & Right (9 cols) */}
-                <div className="xl:col-span-9 flex flex-col h-full overflow-hidden gap-6">
+                <div className="xl:col-span-9 flex flex-col h-auto xl:h-full gap-6">
 
                     {/* Top Row: Insights & Settlements */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[300px] shrink-0">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto xl:h-[300px] shrink-0">
                         {/* Spending Chart */}
-                        <div className="lg:col-span-4 h-full overflow-hidden">
+                        <div className="lg:col-span-4 h-[300px] xl:h-full overflow-hidden">
                             <GroupSpendingChart expenses={safeExpenses} members={members} />
                         </div>
 
                         {/* Settlements */}
-                        <div className="lg:col-span-8 h-full rounded-xl border bg-white p-6 shadow-sm dark:bg-gray-900 dark:border-gray-800 overflow-hidden">
+                        <div className="lg:col-span-8 h-auto xl:h-full rounded-xl border bg-white p-6 shadow-sm dark:bg-gray-900 dark:border-gray-800 overflow-hidden">
                             <DebtSummary
                                 members={members}
                                 expenses={safeExpenses}
@@ -157,7 +157,7 @@ export default async function GroupDetailPage({
                     </div>
 
                     {/* Bottom Row: Ledger */}
-                    <div className="flex-1 overflow-hidden flex flex-col rounded-xl border bg-white shadow-sm dark:bg-gray-900 dark:border-gray-800">
+                    <div className="flex-1 overflow-hidden flex flex-col rounded-xl border bg-white shadow-sm dark:bg-gray-900 dark:border-gray-800 min-h-[500px]">
                         <div className="p-4 border-b dark:border-gray-800 flex justify-between items-center">
                             <h3 className="font-bold text-gray-900 dark:text-white blue:text-white">Expense Ledger</h3>
                             <span className="text-xs text-gray-500">{safeExpenses.length} transactions</span>

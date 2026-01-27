@@ -70,7 +70,7 @@ export default async function DashboardPage() {
 
     return (
         <>
-            <main className="flex-1 pb-20 md:pb-0 overflow-y-auto">
+            <main className="flex-1 pb-24 md:pb-0 overflow-y-auto">
                 <div className="flex h-full flex-col p-6 md:p-8 space-y-8">
                     {/* Header */}
                     <header className="flex justify-between items-center mb-2">
@@ -137,12 +137,12 @@ export default async function DashboardPage() {
                     <div className="flex-1">
                         <RecentTransactions transactions={allExpenses} />
                     </div>
-// Mobile/Tablet Content (Visible only on screens smaller than XL)
+                    {/* Mobile/Tablet Content (Visible only on screens smaller than XL) */}
                     <div className="xl:hidden grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
-                        <div className="bg-card rounded-2xl border border-border overflow-hidden h-[500px] shadow-sm">
+                        <div className="bg-card rounded-2xl border border-border overflow-hidden h-auto min-h-[400px] shadow-sm">
                             <UpcomingPayments initialPayments={payments || []} />
                         </div>
-                        <div className="bg-card rounded-2xl border border-border overflow-hidden h-[500px] shadow-sm">
+                        <div className="bg-card rounded-2xl border border-border overflow-hidden h-auto min-h-[400px] shadow-sm">
                             <SavingsGoals initialGoals={goals || []} />
                         </div>
                     </div>

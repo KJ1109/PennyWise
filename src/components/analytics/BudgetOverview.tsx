@@ -80,7 +80,7 @@ export function BudgetOverview({ monthlyBudget, spentThisMonth, spentThisWeek, s
                     Active
                 </span>
             </div>
-            <div className="flex flex-wrap justify-around gap-4">
+            <div className="flex flex-wrap justify-center gap-6 md:gap-4">
                 <MiniCircle label="Daily" budget={dailyBudget} spent={spentToday} color={mainColor} />
                 <MiniCircle label="Weekly" budget={weeklyBudget} spent={spentThisWeek} color={mainColor} />
                 <MiniCircle label="Monthly" budget={monthlyBudget} spent={spentThisMonth} color={mainColor} />

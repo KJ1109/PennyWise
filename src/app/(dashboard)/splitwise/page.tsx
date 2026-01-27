@@ -25,7 +25,7 @@ export default async function SplitwisePage() {
     const pendingInvites = await getPendingInvites()
 
     return (
-        <main className="flex-1 w-full h-screen overflow-y-auto flex flex-col p-4 md:p-8">
+        <main className="flex-1 w-full min-h-screen flex flex-col p-4 md:p-8 pb-24 md:pb-8">
             <div className="mb-8 flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white blue:text-white">Splitwise & Groups</h1>

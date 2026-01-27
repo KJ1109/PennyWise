@@ -188,7 +188,7 @@ export function CategoryAnalytics({ expenses }: { expenses: any[] }) {
                 {chartData.length > 0 && chartData.some((d: any) => d.value > 0 || d.total > 0) ? (
                     <>
                         {chartType === 'pie' ? (
-                            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 h-full items-center pl-2">
+                            <div className="w-full flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-8 h-full items-center pl-0 lg:pl-2">
                                 {/* Donut Chart */}
                                 <div className="relative w-full h-[240px]">
                                     <ResponsiveContainer width="100%" height="100%">

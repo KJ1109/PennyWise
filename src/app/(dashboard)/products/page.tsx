@@ -40,7 +40,7 @@ export default function ProductsPage() {
     const minPrice = results.length > 0 ? Math.min(...results.map(p => p.price)) : 0
 
     return (
-        <main className="flex-1 w-full h-screen overflow-y-auto flex flex-col items-center p-4 pt-8 md:p-8">
+        <main className="flex-1 w-full min-h-screen flex flex-col items-center p-4 pt-8 pb-24 md:p-8">
             <div className="mb-6 text-center">
                 <h1 className="mb-2 text-3xl font-bold text-gray-900">Price Comparison</h1>
                 <p className="text-gray-500">Find the best deals across the web.</p>

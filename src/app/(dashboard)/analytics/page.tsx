@@ -28,7 +28,7 @@ export default async function AnalyticsPage() {
     // Fetch All Expenses
     const { data: expenses } = await supabase
         .from('expenses')
-        .select('*')
+        .select('amount, date, category, description')
         .eq('user_id', user.id) // Explicit security filter
         .order('date', { ascending: false })
 
@@ -74,7 +74,7 @@ export default async function AnalyticsPage() {
     const maxTxn = topDrainAndMonthExpenses.reduce((max: any, e: any) => (e.amount > (max?.amount || 0) ? e : max), null)
 
     return (
-        <main className="flex-1 w-full h-screen overflow-y-auto p-6 md:p-8 space-y-8">
+        <main className="flex-1 w-full min-h-screen flex flex-col p-4 md:p-8 space-y-6 md:space-y-8 pb-24 md:pb-8">
             <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
                 <div>
                     <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white blue:text-white font-display">Analytics Dashboard</h2>
@@ -85,7 +85,7 @@ export default async function AnalyticsPage() {
 
             <div className="grid grid-cols-12 gap-6">
                 {/* Row 1 */}
-                <div className="col-span-12 lg:col-span-5 h-[350px]">
+                <div className="col-span-12 lg:col-span-5 h-auto md:h-[350px]">
                     <BudgetOverview
                         monthlyBudget={monthlyBudget}
                         spentThisMonth={spentThisMonth}
@@ -98,10 +98,10 @@ export default async function AnalyticsPage() {
                 </div>
 
                 {/* Row 2 */}
-                <div className="col-span-12 lg:col-span-8 h-[550px]">
+                <div className="col-span-12 lg:col-span-8 h-auto md:h-[550px]">
                     <CategoryAnalytics expenses={allExpenses} />
                 </div>
-                <div className="col-span-12 lg:col-span-4 h-[550px]">
+                <div className="col-span-12 lg:col-span-4 h-auto md:h-[550px]">
                     <AdvancedAnalytics expenses={allExpenses} monthlyBudget={monthlyBudget} />
                 </div>
             </div>
