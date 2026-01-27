@@ -8,9 +8,10 @@ import { cn } from '@/lib/utils'
 
 export function AuthForm() {
     const router = useRouter()
-    const [mode, setMode] = useState<'login' | 'register'>('login')
+    const [mode, setMode] = useState<'login' | 'register' | 'forgot_password'>('login')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
     // Form Data
     const [email, setEmail] = useState('')
@@ -34,19 +35,6 @@ export function AuthForm() {
         const timer = setTimeout(async () => {
             setIsUsernameChecking(true)
             const supabase = createClient()
-
-            // Check profiles table for username
-            // Assuming 'username' column exists or we check full_name/email? 
-            // User asked "enter username check if exists".
-            // Since we use email for auth usually, we might need a separate username column.
-            // Existing schema: profiles(full_name).
-            // I will assume for now we treat 'full_name' as display name and maybe check if it's taken?
-            // Or strictly speaking, Supabase Auth uses Email.
-            // Let's implement a pseudo-username check against 'full_name' or just accept it as Display Name.
-            // User said "enter username check if exists". This implies uniqueness.
-            // Let's check 'profiles' table where 'full_name' = username.
-            // Note: full_name isn't unique in schema usually. 
-            // But I will implement the check logic.
 
             const { data } = await supabase
                 .from('profiles')
@@ -80,6 +68,7 @@ export function AuthForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError(null)
+        setSuccessMessage(null)
         setLoading(true)
 
         const supabase = createClient()
@@ -93,7 +82,6 @@ export function AuthForm() {
                 })
 
                 // Try 2: As Username (if failed and looks like username)
-                // We construct the dummy email we use for username-registrants
                 if (signInError && !email.includes('@')) {
                     const dummyEmail = `${email.toLowerCase().replace(/\s+/g, '')}@finance.com`
                     const { error: retryError } = await supabase.auth.signInWithPassword({
@@ -109,6 +97,14 @@ export function AuthForm() {
 
                 router.refresh()
                 router.push('/')
+            } else if (mode === 'forgot_password') {
+                // Forgot Password Flow
+                const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/auth/callback?next=/auth/update-password`,
+                })
+
+                if (resetError) throw resetError
+                setSuccessMessage('Password recovery link sent! Check your email.')
             } else {
                 // Register
                 if (!passwordsMatch) {
@@ -121,9 +117,12 @@ export function AuthForm() {
                 // 1. SignUp
                 let finalEmail = email
                 if (!finalEmail) {
-                    // Auto-generate placeholder email for username-only users
-                    // Sanitize username to ensure valid email format if needed, but simplistic is fine for now
-                    finalEmail = `${username.toLowerCase().replace(/\s+/g, '')}@finance.com`
+                    // Should be strictly prevented by 'required' attribute, but validation here:
+                    if (!email.includes('@') && !email.includes('.')) {
+                        // Support for pure username registration (legacy support or if user insists on username only)
+                        // User specifically asked to make email Compulsory.
+                        throw new Error("Email is required for registration.")
+                    }
                 }
 
                 const { data, error: signUpError } = await supabase.auth.signUp({
@@ -165,10 +164,11 @@ export function AuthForm() {
                         onClick={() => {
                             setMode('login')
                             setError(null)
+                            setSuccessMessage(null)
                         }}
                         className={cn(
                             "flex items-center justify-center rounded-md py-2 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer select-none",
-                            mode === 'login'
+                            mode === 'login' || mode === 'forgot_password'
                                 ? "bg-gradient-to-r from-[#00C896] to-[#040404] text-white shadow-[0_0_20px_rgba(0,200,150,0.4)]"
                                 : "text-gray-400 hover:text-white hover:bg-white/5"
                         )}
@@ -180,6 +180,7 @@ export function AuthForm() {
                         onClick={() => {
                             setMode('register')
                             setError(null)
+                            setSuccessMessage(null)
                         }}
                         className={cn(
                             "flex items-center justify-center rounded-md py-2 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer select-none",
@@ -230,11 +231,11 @@ export function AuthForm() {
 
                     <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                            {mode === 'login' ? 'Email or Username' : 'Email (Optional)'}
+                            {mode === 'login' ? 'Email or Username' : (mode === 'forgot_password' ? 'Enter your Registered Email' : 'Email (Required)')}
                         </label>
                         <input
                             type="text"
-                            required={mode === 'register' ? false : true}
+                            required
                             placeholder={mode === 'login' ? "username or email" : "name@example.com"}
                             className="w-full rounded-md border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none transition-all duration-300 hover:border-[#00C896]/50 hover:bg-white/10 focus:border-[#00C896] focus:bg-black focus:shadow-[0_0_20px_rgba(0,200,150,0.3)]"
                             value={email}
@@ -242,28 +243,45 @@ export function AuthForm() {
                         />
                     </div>
 
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                            Password
-                        </label>
-                        <div className="relative">
-                            <input
-                                type={showPassword ? 'text' : 'password'}
-                                required
-                                placeholder="••••••••"
-                                className="w-full rounded-md border border-white/10 bg-white/5 px-4 py-3 pr-10 text-sm text-white placeholder-gray-500 outline-none transition-all duration-300 hover:border-[#00C896]/50 hover:bg-white/10 focus:border-[#00C896] focus:bg-black focus:shadow-[0_0_20px_rgba(0,200,150,0.3)] [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
-                            >
-                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
+                    {mode !== 'forgot_password' && (
+                        <div className="space-y-1">
+                            <div className="flex justify-between items-center">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                                    Password
+                                </label>
+                                {mode === 'login' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setMode('forgot_password');
+                                            setError(null);
+                                            setSuccessMessage(null);
+                                        }}
+                                        className="text-[10px] text-[#00C896] hover:text-[#00C896]/80 transition-colors uppercase font-bold tracking-wider"
+                                    >
+                                        Forgot Password?
+                                    </button>
+                                )}
+                            </div>
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    required
+                                    placeholder="••••••••"
+                                    className="w-full rounded-md border border-white/10 bg-white/5 px-4 py-3 pr-10 text-sm text-white placeholder-gray-500 outline-none transition-all duration-300 hover:border-[#00C896]/50 hover:bg-white/10 focus:border-[#00C896] focus:bg-black focus:shadow-[0_0_20px_rgba(0,200,150,0.3)] [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                                >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {mode === 'register' && (
                         <div className="space-y-1">
@@ -299,6 +317,12 @@ export function AuthForm() {
                         </div>
                     )}
 
+                    {successMessage && (
+                        <div className="rounded-md bg-green-500/10 p-3 text-center text-xs text-[#00C896] border border-[#00C896]/20">
+                            {successMessage}
+                        </div>
+                    )}
+
                 </div>
                 <button
                     type="submit"
@@ -306,12 +330,26 @@ export function AuthForm() {
                     className="group relative w-full overflow-hidden rounded-md bg-gradient-to-r from-[#00C896] to-[#040404] py-3 text-xs font-bold uppercase tracking-widest text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(0,200,150,0.6)] disabled:opacity-50"
                 >
                     <span className="relative z-10 flex items-center justify-center gap-2">
-                        {loading ? 'Processing...' : (mode === 'login' ? 'Login' : 'Create Account')}
+                        {loading ? 'Processing...' : (mode === 'login' ? 'Login' : (mode === 'forgot_password' ? 'Send Reset Link' : 'Create Account'))}
                         {!loading && <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />}
                     </span>
                     {/* Shine Effect */}
                     <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                 </button>
+
+                {mode === 'forgot_password' && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setMode('login');
+                            setError(null);
+                            setSuccessMessage(null);
+                        }}
+                        className="w-full text-center text-xs text-gray-500 hover:text-white transition-colors mt-2"
+                    >
+                        Back to Login
+                    </button>
+                )}
             </form>
 
             {/* Divider */}
