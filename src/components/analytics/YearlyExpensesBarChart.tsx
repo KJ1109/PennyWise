@@ -142,11 +142,14 @@ export function YearlyExpensesBarChart({ expenses, monthlyBudget }: { expenses: 
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(156, 163, 175, 0.1)" />
                         <XAxis
                             dataKey="name"
-                            fontSize={12}
+                            fontSize={10}
                             tickLine={false}
                             axisLine={false}
                             tick={{ fill: 'rgba(156, 163, 175, 0.8)' }}
-                            tickMargin={16}
+                            tickFormatter={(value) => value.toString().slice(0, 3)}
+                            interval="preserveStartEnd"
+                            minTickGap={0}
+                            tickMargin={10}
                             padding={{ left: 10, right: 10 }}
                         />
                         <YAxis
