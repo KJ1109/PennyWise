@@ -25,9 +25,9 @@ export function CapacitorAppListener() {
                     // Case 2: Custom Scheme (pennywise://login-callback...)
                     else if (url.protocol === 'pennywise:') {
                         // pennywise://login-callback?code=xyz -> /auth/callback?code=xyz
-                        // We replace the scheme/host with internal path
+                        // Use HARD navigation to force server-side route execution and cookie setting
                         const path = '/auth/callback' + url.search + url.hash
-                        router.push(path)
+                        window.location.href = path
                     }
                 })
             } catch (e) {
