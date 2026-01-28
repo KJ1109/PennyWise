@@ -8,7 +8,7 @@ interface AppShellProps {
 
 export function AppShell({ children, user }: AppShellProps) {
     return (
-        <div className="flex min-h-screen bg-muted transition-colors duration-300">
+        <div className="flex min-h-screen bg-muted transition-colors duration-300 pt-[env(safe-area-inset-top)]">
             <Sidebar user={user} />
             {children}
             <BottomNav />
