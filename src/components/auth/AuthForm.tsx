@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { Capacitor } from '@capacitor/core'
 import { Loader2, ArrowRight, CheckCircle2, XCircle, ShieldCheck, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -57,10 +58,18 @@ export function AuthForm() {
 
     const handleGoogleLogin = async () => {
         const supabase = createClient()
+
+        const getRedirectUrl = () => {
+            if (Capacitor.isNativePlatform()) {
+                return 'pennywise://login-callback'
+            }
+            return `${window.location.origin}/auth/callback`
+        }
+
         await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${location.origin}/auth/callback`,
+                redirectTo: getRedirectUrl(),
             },
         })
     }

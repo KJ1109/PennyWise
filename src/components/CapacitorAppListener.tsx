@@ -17,9 +17,16 @@ export function CapacitorAppListener() {
                     // We only want the path and query string, e.g. /auth/callback?code=...
                     // The domain part is handled by the Capacitor WebView wrapping the site.
                     // If the domain matches our site, we navigate internally.
+                    // Case 1: Universal Link (https://penny-wise-finance.vercel.app...)
                     if (url.hostname === 'penny-wise-finance.vercel.app') {
                         const path = url.pathname + url.search + url.hash
-                        // Force router navigation
+                        router.push(path)
+                    }
+                    // Case 2: Custom Scheme (pennywise://login-callback...)
+                    else if (url.protocol === 'pennywise:') {
+                        // pennywise://login-callback?code=xyz -> /auth/callback?code=xyz
+                        // We replace the scheme/host with internal path
+                        const path = '/auth/callback' + url.search + url.hash
                         router.push(path)
                     }
                 })

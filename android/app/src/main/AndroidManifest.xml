@@ -30,6 +30,14 @@
                 <data android:scheme="https" android:host="penny-wise-finance.vercel.app" android:pathPrefix="/auth/callback" />
             </intent-filter>
 
+            <!-- Custom Scheme Fallback (Reliable) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="pennywise" android:host="login-callback" />
+            </intent-filter>
+
         </activity>
 
         <provider
