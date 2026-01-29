@@ -83,7 +83,7 @@ export function YearlyExpensesBarChart({ expenses, monthlyBudget }: { expenses: 
     }
 
     return (
-        <div className="bg-white p-6 rounded-3xl shadow-sm border dark:bg-gray-900 dark:border-gray-800 h-full flex flex-col">
+        <div className="bg-white p-4 sm:p-6 rounded-3xl shadow-sm border dark:bg-gray-900 dark:border-gray-800 h-full flex flex-col">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-2">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white blue:text-white font-display">
                     {viewMode === 'yearly' ? 'Yearly Trends' : 'Monthly Breakdown'}
@@ -132,7 +132,7 @@ export function YearlyExpensesBarChart({ expenses, monthlyBudget }: { expenses: 
 
             <div className="flex-1 w-full min-h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 30 }}>
                         <defs>
                             <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor={mainColor} stopOpacity={0.3} />

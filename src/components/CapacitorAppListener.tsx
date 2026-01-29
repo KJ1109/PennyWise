@@ -24,30 +24,22 @@ export function CapacitorAppListener() {
                     }
                     // Case 2: Custom Scheme (com.pennywise.app://auth?code=...)
                     else if (url.protocol === 'com.pennywise.app:') {
-                        // Debug Alert
-                        alert(`App Open: ${url.href}`)
-
                         const { createClient } = await import('@/lib/supabase/client')
                         const supabase = createClient()
 
                         // Parse Code
                         const params = new URLSearchParams(url.search)
                         const code = params.get('code')
-                        alert(`Code found: ${code ? 'YES' : 'NO'}`)
 
                         if (code) {
-                            alert('Exchanging code...')
                             const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
                             if (!error) {
-                                alert('Success! Redirecting...')
                                 window.location.href = '/'
                             } else {
-                                alert(`Error: ${error.message}`)
                                 console.error('Auth Exchange Error:', error)
                             }
                         } else {
-                            alert('No Auth Code found in URL.')
                             console.error('Deep Link Error: No code param found', url.href)
                         }
                     }
