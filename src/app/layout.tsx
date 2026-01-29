@@ -27,6 +27,10 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
+import { CapacitorAppListener } from "@/components/CapacitorAppListener";
+
+// ... (other imports)
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -44,6 +48,7 @@ export default function RootLayout({
           disableTransitionOnChange
           themes={['light', 'dark', 'pink', 'blue']}
         >
+          <CapacitorAppListener />
           <ThemeSync />
           {children}
         </ThemeProvider>
