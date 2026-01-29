@@ -10,6 +10,7 @@ export function CapacitorAppListener() {
     useEffect(() => {
         // Only run on client and if App plugin is available
         const setupListener = async () => {
+            alert('Listener SETUP: Active') // Proof that JS is running
             try {
                 // Add listener for app URL open (deep links)
                 await App.addListener('appUrlOpen', async (event) => {
