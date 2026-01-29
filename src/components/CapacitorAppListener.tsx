@@ -47,14 +47,8 @@ export function CapacitorAppListener() {
                                 console.error('Auth Exchange Error:', error)
                             }
                         } else {
-                            // Try session from URL (Implicit flow fallback)
-                            alert('Trying getSessionFromUrl...')
-                            const { error } = await supabase.auth.getSessionFromUrl({ url: url.href })
-                            if (!error) {
-                                window.location.href = '/'
-                            } else {
-                                alert(`Session Error: ${error.message}`)
-                            }
+                            alert('No Auth Code found in URL.')
+                            console.error('Deep Link Error: No code param found', url.href)
                         }
                     }
                 })
