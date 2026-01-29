@@ -17,6 +17,17 @@ import {
     DialogDescription,
     DialogFooter,
 } from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 
 export default function SettingsPage() {
@@ -301,12 +312,29 @@ export default function SettingsPage() {
                             <h2 className="text-lg font-semibold text-foreground">Session</h2>
                         </div>
                         <div className="mt-6">
-                            <button
-                                onClick={handleSignOut}
-                                className="flex w-full items-center justify-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/20 transition-colors"
-                            >
-                                <LogOut className="h-4 w-4" /> Sign Out
-                            </button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <button
+                                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/20 transition-colors"
+                                    >
+                                        <LogOut className="h-4 w-4" /> Sign Out
+                                    </button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Sign Out</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Are you sure you want to sign out? You will need to log in again to access your data.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleSignOut} className="bg-red-600 hover:bg-red-700 text-white">
+                                            Sign Out
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                     </div>
                 </div>
