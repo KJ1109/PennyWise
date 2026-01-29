@@ -132,7 +132,7 @@ export function YearlyExpensesBarChart({ expenses, monthlyBudget }: { expenses: 
 
             <div className="flex-1 w-full min-h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                    <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
                         <defs>
                             <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor={mainColor} stopOpacity={0.3} />
@@ -148,17 +148,15 @@ export function YearlyExpensesBarChart({ expenses, monthlyBudget }: { expenses: 
                             tick={{ fill: 'rgba(156, 163, 175, 0.8)' }}
                             tickFormatter={(value) => value.toString().slice(0, 3)}
                             interval="preserveStartEnd"
-                            minTickGap={10}
-                            tickMargin={15}
+                            dy={10}
                         />
                         <YAxis
-                            width={45}
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
                             tickFormatter={(value) => `₹${value / 1000}k`}
                             tick={{ fill: 'rgba(156, 163, 175, 0.8)' }}
-                            tickMargin={10}
+                            dx={-10}
                         />
                         <Tooltip
                             formatter={(value: any) => [formatCurrency(Number(value)), 'Spend']}

@@ -93,7 +93,7 @@ export default async function AnalyticsPage() {
                         spentToday={spentToday}
                     />
                 </div>
-                <div className="col-span-12 lg:col-span-7 h-[350px]">
+                <div className="col-span-12 lg:col-span-7 h-auto md:h-[350px]">
                     <YearlyExpensesBarChart expenses={allExpenses} monthlyBudget={monthlyBudget} />
                 </div>
 
