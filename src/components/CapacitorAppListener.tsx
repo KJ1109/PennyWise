@@ -22,10 +22,11 @@ export function CapacitorAppListener() {
                         const path = url.pathname + url.search + url.hash
                         router.push(path)
                     }
-                    // Case 2: Custom Scheme (pennywise://login-callback...)
-                    else if (url.protocol === 'pennywise:') {
-                        // pennywise://login-callback?code=xyz
+                    // Case 2: Custom Scheme (com.pennywise.app://auth?code=...)
+                    else if (url.protocol === 'com.pennywise.app:') {
+                        // com.pennywise.app://auth?code=xyz
                         // Client-Side Exchange to ensure Session is set in WebView
+                        // The code is usually in the search params of the URL
                         const params = new URLSearchParams(url.search)
                         const code = params.get('code')
 

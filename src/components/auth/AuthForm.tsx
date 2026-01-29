@@ -61,7 +61,8 @@ export function AuthForm() {
 
         const getRedirectUrl = () => {
             if (Capacitor.isNativePlatform()) {
-                return 'pennywise://login-callback'
+                // Redirect to our HTTPS bridge page, which handles the deep link handoff
+                return 'https://penny-wise-finance.vercel.app/auth/mobile-callback'
             }
             return `${window.location.origin}/auth/callback`
         }
