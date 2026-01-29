@@ -22,6 +22,17 @@ export default function MobileCallback() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
             <p className="text-sm text-gray-400">Finalizing login...</p>
             <p className="text-xs text-gray-600 mt-2">Opening App...</p>
+
+            <button
+                onClick={() => {
+                    const search = window.location.search
+                    const hash = window.location.hash
+                    window.location.href = `com.pennywise.app://auth${search}${hash}`
+                }}
+                className="mt-8 rounded-full bg-white/10 px-6 py-2 text-sm font-medium text-white hover:bg-white/20"
+            >
+                Click here if App doesn't open
+            </button>
         </div>
     )
 }
