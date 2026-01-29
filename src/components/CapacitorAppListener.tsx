@@ -24,24 +24,36 @@ export function CapacitorAppListener() {
                     }
                     // Case 2: Custom Scheme (com.pennywise.app://auth?code=...)
                     else if (url.protocol === 'com.pennywise.app:') {
-                        // com.pennywise.app://auth?code=xyz
-                        // Client-Side Exchange to ensure Session is set in WebView
-                        // The code is usually in the search params of the URL
+                        // Debug Alert
+                        alert(`App Open: ${url.href}`)
+
+                        const { createClient } = await import('@/lib/supabase/client')
+                        const supabase = createClient()
+
+                        // Parse Code
                         const params = new URLSearchParams(url.search)
                         const code = params.get('code')
+                        alert(`Code found: ${code ? 'YES' : 'NO'}`)
 
                         if (code) {
-                            const { createClient } = await import('@/lib/supabase/client')
-                            const supabase = createClient()
-
-                            const { error } = await supabase.auth.exchangeCodeForSession(code)
+                            alert('Exchanging code...')
+                            const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
                             if (!error) {
-                                // Session established! Reload to Dashboard
+                                alert('Success! Redirecting...')
                                 window.location.href = '/'
                             } else {
+                                alert(`Error: ${error.message}`)
                                 console.error('Auth Exchange Error:', error)
-                                router.push(`/auth/auth-code-error?error=${error.message}`)
+                            }
+                        } else {
+                            // Try session from URL (Implicit flow fallback)
+                            alert('Trying getSessionFromUrl...')
+                            const { error } = await supabase.auth.getSessionFromUrl({ url: url.href })
+                            if (!error) {
+                                window.location.href = '/'
+                            } else {
+                                alert(`Session Error: ${error.message}`)
                             }
                         }
                     }
