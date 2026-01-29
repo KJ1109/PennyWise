@@ -12,7 +12,7 @@ export function CapacitorAppListener() {
         const setupListener = async () => {
             try {
                 // Add listener for app URL open (deep links)
-                await App.addListener('appUrlOpen', (event) => {
+                await App.addListener('appUrlOpen', async (event) => {
                     const url = new URL(event.url)
                     // We only want the path and query string, e.g. /auth/callback?code=...
                     // The domain part is handled by the Capacitor WebView wrapping the site.
@@ -24,10 +24,25 @@ export function CapacitorAppListener() {
                     }
                     // Case 2: Custom Scheme (pennywise://login-callback...)
                     else if (url.protocol === 'pennywise:') {
-                        // pennywise://login-callback?code=xyz -> /auth/callback?code=xyz
-                        // Use HARD navigation to force server-side route execution and cookie setting
-                        const path = '/auth/callback' + url.search + url.hash
-                        window.location.href = path
+                        // pennywise://login-callback?code=xyz
+                        // Client-Side Exchange to ensure Session is set in WebView
+                        const params = new URLSearchParams(url.search)
+                        const code = params.get('code')
+
+                        if (code) {
+                            const { createClient } = await import('@/lib/supabase/client')
+                            const supabase = createClient()
+
+                            const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+                            if (!error) {
+                                // Session established! Reload to Dashboard
+                                window.location.href = '/'
+                            } else {
+                                console.error('Auth Exchange Error:', error)
+                                router.push(`/auth/auth-code-error?error=${error.message}`)
+                            }
+                        }
                     }
                 })
             } catch (e) {
