@@ -46,10 +46,44 @@ export function GroupSettingsMenu({
     }
 
     const handleDelete = async () => {
-        if (!confirm('Are you sure you want to DELETE this group? This action helps no one and cannot be undone.')) return
-
         setLoading(true)
         const supabase = createClient()
+
+        // 1. Strict Check: Are there any unsettled debts in the group?
+        // Fetch all group expenses to calculate full web of debts
+        const { data: groupExpenses } = await supabase
+            .from('group_expenses')
+            .select(`
+                *,
+                expense_splits(user_id, amount_owed)
+            `)
+            .eq('group_id', groupId)
+
+        // Calculate balances for EVERYONE
+        const balances: Record<string, number> = {}
+        groupExpenses?.forEach((e: any) => {
+            const payerId = e.payer_id || e.manual_payer_id
+            if (payerId) balances[payerId] = (balances[payerId] || 0) + Number(e.amount)
+
+            e.expense_splits.forEach((s: any) => {
+                const debtorId = s.user_id || s.manual_member_id
+                if (debtorId) balances[debtorId] = (balances[debtorId] || 0) - Number(s.amount_owed)
+            })
+        })
+
+        // Check if any balance is non-zero
+        const hasDebts = Object.values(balances).some(b => Math.abs(b) > 0.05)
+
+        if (hasDebts) {
+            alert('Cannot delete group. There are unsettled debts between members. Please settle up all balances first.')
+            setLoading(false)
+            return
+        }
+
+        if (!confirm('Are you sure you want to DELETE this group? This action helps no one and cannot be undone.')) {
+            setLoading(false)
+            return
+        }
 
         const { error } = await supabase
             .from('groups')
