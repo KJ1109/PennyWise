@@ -23,7 +23,8 @@ export function EditGroupExpenseDialog({
 }) {
     const [amount, setAmount] = useState(expense.amount.toString())
     const [description, setDescription] = useState(expense.description)
-    const [date, setDate] = useState(new Date(expense.date).toISOString().split('T')[0])
+    // Fix: Use simple string split for date to preserve YYYY-MM-DD regardless of timezone
+    const [date, setDate] = useState(typeof expense.date === 'string' ? expense.date.split('T')[0] : new Date().toISOString().split('T')[0])
     const [loading, setLoading] = useState(false)
     const [payerId, setPayerId] = useState(expense.payer_id || expense.manual_payer_id)
 
@@ -38,7 +39,13 @@ export function EditGroupExpenseDialog({
         if (isOpen) {
             setAmount(expense.amount.toString())
             setDescription(expense.description)
-            setDate(new Date(expense.date).toISOString().split('T')[0])
+            // Fix: Use Local Time for date input to prevent off-by-one day shift
+            const d = new Date(expense.date)
+            // If expense.date is YYYY-MM-DD string, new Date() treats it as UTC.
+            // We want to preserve the calendar date.
+            const dateStr = expense.date.split('T')[0]
+            setDate(dateStr)
+
             setPayerId(expense.payer_id || expense.manual_payer_id)
             // Ideally we parse existing splits here to populate inputs
             // For now, simpler to start fresh or equal

@@ -39,8 +39,8 @@ export function simplifyDebts(netBalances: Record<string, number>) {
     const creditors = []
 
     for (const [uid, amount] of Object.entries(netBalances)) {
-        if (amount < -0.01) debtors.push({ uid, amount })
-        if (amount > 0.01) creditors.push({ uid, amount })
+        if (amount < -0.05) debtors.push({ uid, amount })
+        if (amount > 0.05) creditors.push({ uid, amount })
     }
 
     debtors.sort((a, b) => a.amount - b.amount)
@@ -66,8 +66,8 @@ export function simplifyDebts(netBalances: Record<string, number>) {
         debtor.amount += amount
         creditor.amount -= amount
 
-        if (Math.abs(debtor.amount) < 0.01) i++
-        if (creditor.amount < 0.01) j++
+        if (Math.abs(debtor.amount) < 0.05) i++
+        if (creditor.amount < 0.05) j++
     }
 
     return settlements
@@ -122,10 +122,10 @@ export function calculatePairwiseDebts(expenses: any[], members: any[]) {
 
             if (m1OwesM2 > m2OwesM1) {
                 const net = m1OwesM2 - m2OwesM1
-                if (net > 0.01) settlements.push({ from: m1.id, to: m2.id, amount: net })
+                if (net > 0.05) settlements.push({ from: m1.id, to: m2.id, amount: net })
             } else {
                 const net = m2OwesM1 - m1OwesM2
-                if (net > 0.01) settlements.push({ from: m2.id, to: m1.id, amount: net })
+                if (net > 0.05) settlements.push({ from: m2.id, to: m1.id, amount: net })
             }
         })
     })

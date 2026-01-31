@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, X, ArrowRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -10,6 +10,64 @@ export function SettleUpDialog({ groupId, members, userId }: { groupId: string, 
     const [loading, setLoading] = useState(false)
     const [payerId, setPayerId] = useState(userId)
     const [recipientId, setRecipientId] = useState(members.find(m => m.id !== userId)?.id || members[0]?.id)
+
+    // Auto-calculate debt amount when payer/recipient changes
+    useEffect(() => {
+        async function fetchDebt() {
+            if (payerId === recipientId) return
+
+            const supabase = createClient()
+            // Fetch all expense for this group to calculate pairwise
+            const { data: groupExpenses } = await supabase
+                .from('group_expenses')
+                .select(`
+                    *,
+                    expense_splits(user_id, amount_owed)
+                `)
+                .eq('group_id', groupId)
+
+            if (!groupExpenses) return
+
+            // Minimal reimplementation of pairwise debt logic
+            // 1. Calculate Net Balances
+            const balances: Record<string, number> = {}
+            groupExpenses.forEach((e: any) => {
+                const pId = e.payer_id || e.manual_payer_id
+                if (pId) balances[pId] = (balances[pId] || 0) + Number(e.amount)
+
+                e.expense_splits.forEach((s: any) => {
+                    const dId = s.user_id || s.manual_member_id
+                    if (dId) balances[dId] = (balances[dId] || 0) - Number(s.amount_owed)
+                })
+            })
+
+            // This gives global net. But Settle Up usually targets specific Payer -> Recipient link.
+            // Splitwise style: If I owe you $50, the app should suggest $50.
+            // But with multi-person, it's about network flow.
+            // Simple approach: Suggest the exact amount Payer owes overall? 
+            // Better: Suggest the Pairwise Debt if possible.
+            // Let's us the simplified global net. 
+            // If Payer owes $100 total, and Recipient is owed $100 total, suggest 100.
+            // If Payer owes $100, Recipient is owed $20, suggest 20.
+
+            // Actually, simpler: Just suggest the MIN(abs(payer_net), abs(recipient_net)) if one is negative and other positive.
+            const payerNet = balances[payerId] || 0
+            const recipientNet = balances[recipientId] || 0
+
+            // If Payer owes money (Net < 0) and Recipient is owed money (Net > 0)
+            if (payerNet < -0.01 && recipientNet > 0.01) {
+                const suggested = Math.min(Math.abs(payerNet), recipientNet)
+                setAmount(suggested.toFixed(2))
+            } else {
+                // Default to empty if no clear debt relation
+                setAmount('')
+            }
+        }
+
+        if (isOpen) {
+            fetchDebt()
+        }
+    }, [payerId, recipientId, isOpen, groupId])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -36,25 +94,18 @@ export function SettleUpDialog({ groupId, members, userId }: { groupId: string, 
             return
         }
 
-        // Logic: Payer pays Recipient.
-        // We model this as an expense paid by Payer, where the split is 100% assigned to Recipient?
-        // Wait, if Payer pays Recipient, Recipient receives money.
-        // In standard Splitwise toggle: "Payer paid Recipient".
-        // This effectively means Payer covers a debt TO Recipient.
-        // If Payer OWED Recipient, Payer gives money.
-        // This transaction should REDUCE Payer's debt to Recipient.
-        // If we record an expense: Payer = PayerId. Split = [RecipientId ows Amount].
-        // Then Payer -> Recipient (Payer paid for Recipient).
-        // Recipient owes Payer.
-        // If Payer previously owed Recipient, now Recipient owes Payer (counter-acting).
-        // So yes, this is the correct modeling.
-
         // 1. Create Expense
+        // Fix: Use Local Time
+        const d = new Date()
+        const offset = d.getTimezoneOffset()
+        const local = new Date(d.getTime() - (offset * 60 * 1000))
+        const todayString = local.toISOString().split('T')[0]
+
         const expenseData: any = {
             group_id: groupId,
             amount: totalAmount,
             description: 'Settlement',
-            date: new Date().toISOString().split('T')[0]
+            date: todayString
         }
 
         if (payer.type === 'user') {
