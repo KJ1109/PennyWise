@@ -55,7 +55,7 @@ export function GroupSettingsMenu({
             .from('group_expenses')
             .select(`
                 *,
-                expense_splits(user_id, amount_owed)
+                expense_splits(user_id, manual_member_id, amount_owed)
             `)
             .eq('group_id', groupId)
 
