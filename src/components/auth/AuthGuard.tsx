@@ -29,10 +29,16 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         checkAuth()
 
         // Set up listener for future auth changes (e.g. sign out from another tab/window)
-        const supabase = createClient()
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            // Fix: Don't force logout if we are just offline and session refresh failed
             if (event === 'SIGNED_OUT' || !session) {
-                router.replace('/login')
+                // If we are offline, we might still have useful cached data visible.
+                // Only redirect if we are ONLINE (implying a genuine logout/expiry).
+                if (navigator.onLine) {
+                    router.replace('/login')
+                } else {
+                    console.log('Offline: Supabase session invalid, but keeping UI for read-only mode.')
+                }
             }
         })
 

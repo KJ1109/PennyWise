@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Plus, X, AlertCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 
 type SplitType = 'equal' | 'exact' | 'percentage' | 'shares'
 
@@ -184,11 +185,14 @@ export function AddGroupExpense({ groupId, members, userId }: { groupId: string,
         setLoading(false)
     }
 
+    const isOnline = useNetworkStatus()
+
     if (!isOpen) {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-700"
+                disabled={!isOnline}
+                className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 <Plus className="h-4 w-4" />
                 Add Expense
