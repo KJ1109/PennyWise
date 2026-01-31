@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, X, AlertCircle } from 'lucide-react'
-import { addGroupExpense } from '@/app/actions/splitwise'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 type SplitType = 'equal' | 'exact' | 'percentage' | 'shares'
 
@@ -17,6 +18,8 @@ export function AddGroupExpense({ groupId, members, userId }: { groupId: string,
 
     // Stores inputs for Exact/Percentage/Shares. UserId -> Value
     const [splitValues, setSplitValues] = useState<Record<string, string>>({})
+
+    const router = useRouter()
 
     // Reset values when switching types
     useEffect(() => {
@@ -95,17 +98,8 @@ export function AddGroupExpense({ groupId, members, userId }: { groupId: string,
         }
 
         setLoading(true)
+        const supabase = createClient()
         const rawSplits = calculateSplits(totalAmount)
-
-        // Map to Server Action expected format
-        const finalSplits = rawSplits.map(s => {
-            const member = members.find(m => m.id === s.id)
-            return {
-                user_id: member?.type === 'user' ? s.id : undefined,
-                manual_member_id: member?.type === 'manual' ? s.id : undefined,
-                amount_owed: s.amount_owed
-            }
-        })
 
         const payer = members.find(m => m.id === payerId)
         if (!payer) {
@@ -114,18 +108,52 @@ export function AddGroupExpense({ groupId, members, userId }: { groupId: string,
             return
         }
 
-        const res = await addGroupExpense(
-            groupId,
-            totalAmount,
+        // 1. Create Expense
+        const expenseData: any = {
+            group_id: groupId,
+            amount: totalAmount,
             description,
-            date,
-            payer.id,
-            payer.type,
-            finalSplits
-        )
+            date
+        }
 
-        if (res.error) {
-            alert(res.error)
+        if (payer.type === 'user') {
+            expenseData.payer_id = payer.id
+        } else {
+            expenseData.manual_payer_id = payer.id
+        }
+
+        const { data: expense, error: eError } = await supabase
+            .from('group_expenses')
+            .insert(expenseData)
+            .select()
+            .single()
+
+        if (eError || !expense) {
+            alert('Failed to create expense: ' + eError?.message)
+            setLoading(false)
+            return
+        }
+
+        // 2. Create Splits
+        const formattedSplits = rawSplits.map(s => {
+            const member = members.find(m => m.id === s.id)
+            return {
+                expense_id: expense.id,
+                user_id: member?.type === 'user' ? s.id : null,
+                manual_member_id: member?.type === 'manual' ? s.id : null,
+                amount_owed: s.amount_owed
+            }
+        })
+
+        const { error: sError } = await supabase
+            .from('expense_splits')
+            .insert(formattedSplits)
+
+        if (sError) {
+            console.error('Split Error', sError)
+            // Rollback: Delete the expense we just created
+            await supabase.from('group_expenses').delete().eq('id', expense.id)
+            alert('Failed to create splits. The expense has been cancelled/deleted. Please try again.')
         } else {
             setAmount('')
             setDescription('')
@@ -133,6 +161,7 @@ export function AddGroupExpense({ groupId, members, userId }: { groupId: string,
             setIsOpen(false)
             setSplitValues({})
             setPayerId(userId)
+            window.location.reload()
         }
         setLoading(false)
     }

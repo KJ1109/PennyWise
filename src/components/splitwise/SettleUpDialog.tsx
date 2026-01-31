@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, X, ArrowRight } from 'lucide-react'
-import { addGroupExpense } from '@/app/actions/splitwise'
+import { createClient } from '@/lib/supabase/client'
 
 export function SettleUpDialog({ groupId, members, userId }: { groupId: string, members: any[], userId: string }) {
     const [isOpen, setIsOpen] = useState(false)
@@ -25,6 +25,7 @@ export function SettleUpDialog({ groupId, members, userId }: { groupId: string, 
         }
 
         setLoading(true)
+        const supabase = createClient()
 
         const payer = members.find(m => m.id === payerId)
         const recipient = members.find(m => m.id === recipientId)
@@ -48,28 +49,50 @@ export function SettleUpDialog({ groupId, members, userId }: { groupId: string, 
         // If Payer previously owed Recipient, now Recipient owes Payer (counter-acting).
         // So yes, this is the correct modeling.
 
-        // Splits array: Recipient owes the full amount
+        // 1. Create Expense
+        const expenseData: any = {
+            group_id: groupId,
+            amount: totalAmount,
+            description: 'Settlement',
+            date: new Date().toISOString().split('T')[0]
+        }
+
+        if (payer.type === 'user') {
+            expenseData.payer_id = payer.id
+        } else {
+            expenseData.manual_payer_id = payer.id
+        }
+
+        const { data: expense, error: eError } = await supabase
+            .from('group_expenses')
+            .insert(expenseData)
+            .select()
+            .single()
+
+        if (eError || !expense) {
+            alert('Failed to create settlement: ' + eError?.message)
+            setLoading(false)
+            return
+        }
+
+        // 2. Create Splits (Recipient owes 100%)
         const splits = [{
-            user_id: recipient.type === 'user' ? recipient.id : undefined,
-            manual_member_id: recipient.type === 'manual' ? recipient.id : undefined,
+            expense_id: expense.id,
+            user_id: recipient.type === 'user' ? recipient.id : null,
+            manual_member_id: recipient.type === 'manual' ? recipient.id : null,
             amount_owed: totalAmount
         }]
 
-        const res = await addGroupExpense(
-            groupId,
-            totalAmount,
-            'Settlement',
-            new Date().toISOString().split('T')[0],
-            payer.id,
-            payer.type,
-            splits
-        )
+        const { error: sError } = await supabase
+            .from('expense_splits')
+            .insert(splits)
 
-        if (res.error) {
-            alert(res.error)
+        if (sError) {
+            alert('Failed to create settlement splits: ' + sError.message)
         } else {
             setAmount('')
             setIsOpen(false)
+            window.location.reload()
         }
         setLoading(false)
     }

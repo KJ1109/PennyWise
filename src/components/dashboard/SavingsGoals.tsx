@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { addGoal, deleteGoal, updateGoalAmount, updateGoal } from '@/app/actions/dashboard-features'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Plus, Trash2, Mountain, Car, Home, Gamepad2, Plane, Gift, ShoppingBag, Pencil } from 'lucide-react'
@@ -19,29 +19,69 @@ const GOAL_ICONS: Record<string, any> = {
 }
 
 export function SavingsGoals({ initialGoals }: { initialGoals: any[] }) {
+    const [goals, setGoals] = useState(initialGoals)
     const [isOpen, setIsOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [topUpGoal, setTopUpGoal] = useState<any>(null)
     const [editingGoal, setEditingGoal] = useState<any>(null)
 
+    useEffect(() => {
+        setGoals(initialGoals)
+    }, [initialGoals])
+
     async function handleSubmit(formData: FormData) {
         setLoading(true)
-        const res = await addGoal(formData)
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            alert('Unauthorized')
+            setLoading(false)
+            return
+        }
+
+        const targetDate = formData.get('target_date') as string
+        const rawData = {
+            title: formData.get('title'),
+            target_amount: formData.get('target_amount'),
+            current_amount: formData.get('current_amount'),
+            target_date: targetDate === '' ? undefined : targetDate,
+            icon_name: formData.get('icon_name'),
+            user_id: user.id
+        }
+
+        const { error, data } = await supabase.from('savings_goals').insert(rawData).select().single()
+
         setLoading(false)
-        if (res?.error) {
+        if (error) {
             alert("Error adding goal")
-        } else {
+        } else if (data) {
+            setGoals(prev => [data, ...prev])
             setIsOpen(false)
         }
     }
 
     async function handleEditSubmit(formData: FormData) {
         setLoading(true)
-        const res = await updateGoal(formData)
+        const supabase = createClient()
+        const id = formData.get('id') as string
+        const targetDate = formData.get('target_date') as string
+
+        const rawData = {
+            title: formData.get('title'),
+            target_amount: formData.get('target_amount'),
+            current_amount: formData.get('current_amount'),
+            target_date: targetDate === '' ? null : targetDate,
+            icon_name: formData.get('icon_name'),
+        }
+
+        const { error, data } = await supabase.from('savings_goals').update(rawData).eq('id', id).select().single()
+
         setLoading(false)
-        if (res?.error) {
+        if (error) {
             alert("Error updating goal")
-        } else {
+        } else if (data) {
+            setGoals(prev => prev.map(g => g.id === id ? data : g))
             setEditingGoal(null)
         }
     }
@@ -49,17 +89,31 @@ export function SavingsGoals({ initialGoals }: { initialGoals: any[] }) {
     async function handleTopUpSubmit(formData: FormData) {
         if (!topUpGoal) return
         setLoading(true)
+        const supabase = createClient()
         const addedAmount = Number(formData.get('amount'))
         const newTotal = Number(topUpGoal.current_amount) + addedAmount
 
-        await updateGoalAmount(topUpGoal.id, newTotal)
+        const { error } = await supabase.from('savings_goals').update({ current_amount: newTotal }).eq('id', topUpGoal.id)
+
         setLoading(false)
-        setTopUpGoal(null)
+        if (error) {
+            alert("Error updating amount")
+        } else {
+            setGoals(prev => prev.map(g => g.id === topUpGoal.id ? { ...g, current_amount: newTotal } : g))
+            setTopUpGoal(null)
+        }
     }
 
     async function handleDelete(id: string) {
         if (!confirm("Delete this savings goal?")) return
-        await deleteGoal(id)
+        const supabase = createClient()
+        const { error } = await supabase.from('savings_goals').delete().eq('id', id)
+
+        if (error) {
+            alert("Error deleting goal")
+        } else {
+            setGoals(prev => prev.filter(g => g.id !== id))
+        }
     }
 
     return (
@@ -115,11 +169,11 @@ export function SavingsGoals({ initialGoals }: { initialGoals: any[] }) {
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-6 pr-1 pb-4 scrollbar-hide">
-                {initialGoals.length === 0 && (
+                {goals.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center">No active savings goals.</p>
                 )}
 
-                {initialGoals.map((goal) => {
+                {goals.map((goal) => {
                     const Icon = GOAL_ICONS[goal.icon_name || 'other'] || Mountain
                     const progress = Math.min(100, (goal.current_amount / goal.target_amount) * 100)
                     const remaining = goal.target_amount - goal.current_amount

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { updateExpense } from '@/app/actions/expenses'
 import { useRouter } from 'next/navigation'
 import {
     Dialog,
@@ -11,6 +10,7 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { createClient } from '@/lib/supabase/client'
 
 interface EditExpenseDialogProps {
     expense: {
@@ -35,18 +35,21 @@ export function EditExpenseDialog({ expense, onClose }: EditExpenseDialogProps) 
         e.preventDefault()
         setLoading(true)
 
-        const formData = new FormData()
-        formData.append('amount', amount)
-        formData.append('category', category)
-        formData.append('description', description)
-        formData.append('date', date)
+        const supabase = createClient()
+        const { error } = await supabase
+            .from('expenses')
+            .update({
+                amount: parseFloat(amount),
+                category,
+                description,
+                date
+            })
+            .eq('id', expense.id)
 
-        const res = await updateExpense(expense.id, formData)
-
-        if (res.error) {
-            alert(res.error)
+        if (error) {
+            alert('Failed to update expense: ' + error.message)
         } else {
-            router.refresh()
+            window.location.reload()
             onClose()
         }
         setLoading(false)

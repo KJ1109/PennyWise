@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { createGroup } from '@/app/actions/splitwise'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Users, Plus, X } from 'lucide-react'
 
-export function CreateGroupDialog({ userId }: { userId: string }) {
+export function CreateGroupDialog({ userId, onGroupCreated }: { userId: string, onGroupCreated: (group: any) => void }) {
     const [isOpen, setIsOpen] = useState(false)
     const [name, setName] = useState('')
     const [loading, setLoading] = useState(false)
@@ -15,14 +15,34 @@ export function CreateGroupDialog({ userId }: { userId: string }) {
         e.preventDefault()
         setLoading(true)
 
-        const res = await createGroup(name)
+        const supabase = createClient()
 
-        if (res.error) {
-            alert(res.error)
+        // 1. Create Group
+        const { data: group, error: groupError } = await supabase
+            .from('groups')
+            .insert({ name, created_by: userId })
+            .select()
+            .single()
+
+        if (groupError) {
+            alert('Failed to create group: ' + groupError.message)
+            setLoading(false)
+            return
+        }
+
+        // 2. Add Creator as Member
+        const { error: memberError } = await supabase
+            .from('group_members')
+            .insert({ group_id: group.id, user_id: userId })
+
+        if (memberError) {
+            alert('Created group but failed to join: ' + memberError.message)
         } else {
             setName('')
             setIsOpen(false)
-            router.refresh()
+            onGroupCreated(group)
+            // Optional: navigate to the new group
+            router.push(`/splitwise/group?id=${group.id}`)
         }
         setLoading(false)
     }

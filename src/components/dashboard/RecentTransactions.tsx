@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { formatCurrency } from '@/lib/budget'
 import { Pencil, Trash2, Calendar, CreditCard, ChevronDown, ChevronRight } from 'lucide-react'
-import { deleteExpense } from '@/app/actions/expenses'
 import { useRouter } from 'next/navigation'
 import { EditExpenseDialog } from './EditExpenseDialog'
+import { createClient } from '@/lib/supabase/client'
 
 interface Transaction {
     id: string
@@ -25,11 +25,13 @@ export function RecentTransactions({ transactions }: { transactions: Transaction
 
     const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this expense?')) {
-            const res = await deleteExpense(id)
-            if (res.error) {
-                alert(res.error)
+            const supabase = createClient()
+            const { error } = await supabase.from('expenses').delete().eq('id', id)
+
+            if (error) {
+                alert('Failed to delete expense: ' + error.message)
             } else {
-                router.refresh()
+                window.location.reload()
             }
         }
     }

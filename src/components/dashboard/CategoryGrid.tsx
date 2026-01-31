@@ -11,9 +11,9 @@ import {
 } from "@/components/ui/sheet"
 import { formatCurrency } from '@/lib/budget'
 import { ShoppingBag, Coffee, Car, Film, Receipt, Home, HelpCircle, Pencil, Trash2 } from 'lucide-react'
-import { deleteExpense } from '@/app/actions/expenses'
 import { useRouter } from 'next/navigation'
 import { EditExpenseDialog } from './EditExpenseDialog'
+import { createClient } from '@/lib/supabase/client'
 
 // Icon mapping
 const categoryIcons: Record<string, any> = {
@@ -98,11 +98,13 @@ export function CategoryGrid({ expenses }: { expenses: Transaction[] }) {
 
     const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this expense?')) {
-            const res = await deleteExpense(id)
-            if (res.error) {
-                alert(res.error)
+            const supabase = createClient()
+            const { error } = await supabase.from('expenses').delete().eq('id', id)
+
+            if (error) {
+                alert('Failed to delete expense: ' + error.message)
             } else {
-                router.refresh()
+                window.location.reload()
             }
         }
     }

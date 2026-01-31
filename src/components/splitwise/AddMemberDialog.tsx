@@ -2,29 +2,49 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, X, UserPlus, Mail, Loader2, CheckCircle2, XCircle } from 'lucide-react'
-import { addMemberByEmail, addManualMember, checkUserExists } from '@/app/actions/splitwise'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 export function AddMemberDialog({ groupId }: { groupId: string }) {
     const [isOpen, setIsOpen] = useState(false)
     const [mode, setMode] = useState<'email' | 'manual'>('manual') // Default to manual as per user pref
     const [inputVal, setInputVal] = useState('')
     const [loading, setLoading] = useState(false)
+    const router = useRouter()
 
     // Validation State
     const [isValidating, setIsValidating] = useState(false)
     const [userExists, setUserExists] = useState<boolean | null>(null)
+    const [lookedUpUserId, setLookedUpUserId] = useState<string | null>(null)
 
     // Debounce Check
     useEffect(() => {
         if (mode !== 'email' || !inputVal || inputVal.length < 3) {
             setUserExists(null)
+            setLookedUpUserId(null)
             return
         }
 
         const timer = setTimeout(async () => {
             setIsValidating(true)
-            const { exists } = await checkUserExists(inputVal)
-            setUserExists(exists)
+            const supabase = createClient()
+
+            // Try explicit email lookup first using our secure RPC function
+            const { data: userId, error } = await supabase.rpc('get_user_id_by_email', {
+                lookup_email: inputVal.trim()
+            })
+
+            if (userId) {
+                setUserExists(true)
+                setLookedUpUserId(userId)
+            } else {
+                // Fallback: Check strictly by username if it was not an email
+                // Note: We don't have a direct "get_user_id_by_username" RPC secure function usually.
+                // Assuming input is primarily email. If username support is needed, we'd need a similar RPC.
+                // For now, we only support email lookup securely.
+                setUserExists(false)
+                setLookedUpUserId(null)
+            }
             setIsValidating(false)
         }, 500)
 
@@ -34,24 +54,67 @@ export function AddMemberDialog({ groupId }: { groupId: string }) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
+        const supabase = createClient()
 
-        let res;
-        if (mode === 'email') {
-            res = await addMemberByEmail(groupId, inputVal)
-        } else {
-            res = await addManualMember(groupId, inputVal)
-        }
-
-        if (res.error) {
-            alert(res.error)
-        } else {
+        try {
             if (mode === 'email') {
+                if (!lookedUpUserId) {
+                    throw new Error("User not found")
+                }
+
+                // Check if already a member
+                const { data: existingMember } = await supabase
+                    .from('group_members')
+                    .select('user_id')
+                    .eq('group_id', groupId)
+                    .eq('user_id', lookedUpUserId)
+                    .single()
+
+                if (existingMember) {
+                    throw new Error("User is already a member of this group.")
+                }
+
+                // Insert Invite
+                const { error: inviteError } = await supabase
+                    .from('group_invites')
+                    .insert({
+                        group_id: groupId,
+                        user_id: lookedUpUserId,
+                        invited_by: (await supabase.auth.getUser()).data.user?.id,
+                        status: 'pending'
+                    })
+
+                if (inviteError) {
+                    if (inviteError.code === '23505') { // Unique violation
+                        throw new Error("Invite already sent to this user.")
+                    }
+                    throw inviteError
+                }
+
                 alert('Invitation sent successfully! They need to accept it.')
+
+            } else {
+                // Manual Member
+                const { error: manualError } = await supabase
+                    .from('manual_members')
+                    .insert({
+                        group_id: groupId,
+                        name: inputVal.trim()
+                    })
+
+                if (manualError) throw manualError
             }
+
+            // Success
             setInputVal('')
             setIsOpen(false)
+            window.location.reload()
+
+        } catch (err: any) {
+            alert(err.message || 'An error occurred')
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     if (!isOpen) {
@@ -81,6 +144,7 @@ export function AddMemberDialog({ groupId }: { groupId: string }) {
                         onClick={() => {
                             setMode('manual')
                             setUserExists(null)
+                            setInputVal('')
                         }}
                         className={`flex-1 flex items-center justify-center gap-2 rounded py-1.5 text-xs font-medium transition-colors ${mode === 'manual'
                             ? 'bg-white text-blue-600 shadow-sm dark:bg-gray-700 dark:text-white'
@@ -94,6 +158,7 @@ export function AddMemberDialog({ groupId }: { groupId: string }) {
                         onClick={() => {
                             setMode('email')
                             setUserExists(null)
+                            setInputVal('')
                         }}
                         className={`flex-1 flex items-center justify-center gap-2 rounded py-1.5 text-xs font-medium transition-colors ${mode === 'email'
                             ? 'bg-white text-blue-600 shadow-sm dark:bg-gray-700 dark:text-white'
@@ -101,24 +166,24 @@ export function AddMemberDialog({ groupId }: { groupId: string }) {
                             }`}
                     >
                         <Mail className="h-3 w-3" />
-                        By Email or Username
+                        By Email
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 blue:text-gray-300">
-                            {mode === 'email' ? 'Member Email or Username' : 'Member Name'}
+                            {mode === 'email' ? 'Member Email' : 'Member Name'}
                         </label>
                         <div className="relative">
                             <input
-                                type={mode === 'email' ? 'text' : 'text'}
+                                type={mode === 'email' ? 'email' : 'text'}
                                 required
                                 autoFocus
                                 value={inputVal}
                                 onChange={(e) => setInputVal(e.target.value)}
                                 className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 pr-10 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white blue:border-gray-700 blue:bg-gray-800 blue:text-white"
-                                placeholder={mode === 'email' ? 'friend@example.com or username' : 'John Doe'}
+                                placeholder={mode === 'email' ? 'friend@example.com' : 'John Doe'}
                             />
                             {/* Validation Icon */}
                             {mode === 'email' && inputVal.length >= 3 && (

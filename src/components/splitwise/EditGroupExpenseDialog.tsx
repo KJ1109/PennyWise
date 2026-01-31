@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, AlertCircle } from 'lucide-react'
-import { updateGroupExpense } from '@/app/actions/splitwise'
+import { createClient } from '@/lib/supabase/client'
 
 type SplitType = 'equal' | 'exact' | 'percentage' | 'shares'
 
@@ -117,31 +117,65 @@ export function EditGroupExpenseDialog({
         }
 
         setLoading(true)
+        const supabase = createClient()
         const rawSplits = calculateSplits(totalAmount)
         const finalSplits = rawSplits.map(s => {
             const member = members.find(m => m.id === s.id)
             return {
-                user_id: member?.type === 'user' ? s.id : undefined,
-                manual_member_id: member?.type === 'manual' ? s.id : undefined,
+                expense_id: expense.id,
+                user_id: member?.type === 'user' ? s.id : null,
+                manual_member_id: member?.type === 'manual' ? s.id : null,
                 amount_owed: s.amount_owed
             }
         })
 
-        const res = await updateGroupExpense(
-            expense.id,
-            groupId,
-            totalAmount,
+        // 1. Update Expense
+        const expenseData: any = {
+            amount: totalAmount,
             description,
-            date,
-            payer.id,
-            payer.type,
-            finalSplits
-        )
+            date
+        }
+        if (payer.type === 'user') {
+            expenseData.payer_id = payer.id
+            expenseData.manual_payer_id = null
+        } else {
+            expenseData.manual_payer_id = payer.id
+            expenseData.payer_id = null
+        }
 
-        if (res.error) {
-            alert(res.error)
+        const { error: updateError } = await supabase
+            .from('group_expenses')
+            .update(expenseData)
+            .eq('id', expense.id)
+
+        if (updateError) {
+            alert('Update failed: ' + updateError.message)
+            setLoading(false)
+            return
+        }
+
+        // 2. Delete Old Splits
+        const { error: deleteError } = await supabase
+            .from('expense_splits')
+            .delete()
+            .eq('expense_id', expense.id)
+
+        if (deleteError) {
+            alert('Failed to clear old splits: ' + deleteError.message)
+            setLoading(false)
+            return
+        }
+
+        // 3. Insert New Splits
+        const { error: insertError } = await supabase
+            .from('expense_splits')
+            .insert(finalSplits)
+
+        if (insertError) {
+            alert('Failed to insert new splits: ' + insertError.message)
         } else {
             onClose()
+            window.location.reload()
         }
         setLoading(false)
     }

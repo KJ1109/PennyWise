@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { addPayment, deletePayment, togglePaymentStatus, updatePayment } from '@/app/actions/dashboard-features'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Plus, Trash2, Zap, Wifi, Home, CreditCard, Check, AlertCircle, Tag } from 'lucide-react'
@@ -19,10 +19,16 @@ const CATEGORY_ICONS: Record<string, any> = {
 }
 
 export function UpcomingPayments({ initialPayments }: { initialPayments: any[] }) {
+    const [payments, setPayments] = useState(initialPayments)
     const [isOpen, setIsOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [isCustomCategory, setIsCustomCategory] = useState(false)
     const [editingPayment, setEditingPayment] = useState<any>(null)
+
+    // Sync state if props change (re-fetch from parent)
+    useEffect(() => {
+        setPayments(initialPayments)
+    }, [initialPayments])
 
     // Derived state for the form
     const isEditMode = !!editingPayment
@@ -30,46 +36,81 @@ export function UpcomingPayments({ initialPayments }: { initialPayments: any[] }
     // Form Status
     async function handleSubmit(formData: FormData) {
         setLoading(true)
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            alert('Please log in')
+            setLoading(false)
+            return
+        }
 
         // Handle Custom Category Logic
         const selectValue = formData.get('category_select')
         let finalCategory = selectValue
 
-        // If "other" is selected, user might optionaly provide a description
-        // User Requirement: "in other category he can add the description of what the other is and it should be optional"
-        // I'll assume if they type "My Gym", we save "My Gym". If they leave it, we save "other".
         if (selectValue === 'other') {
             const desc = formData.get('category_custom') as string
             if (desc && desc.trim()) {
-                finalCategory = desc.trim() // Save the custom description as the category name so it displays
+                finalCategory = desc.trim()
             }
         }
-        // Note: The previous logic had "custom_input" for type-your-own. The new requirement is "select other -> optional description".
-        // I will merge them. Use 'other' as the trigger for the input.
 
-        // Clean up formData
-        formData.set('category', finalCategory as string)
-        formData.delete('category_select')
-        formData.delete('category_custom')
-
-        if (isEditMode) {
-            formData.append('id', editingPayment.id)
-            const res = await updatePayment(formData)
-            if (res?.error) alert("Error updating payment")
-        } else {
-            const res = await addPayment(formData)
-            if (res?.error) alert("Error adding payment")
+        const rawData = {
+            title: formData.get('title'),
+            amount: formData.get('amount'),
+            due_date: formData.get('due_date'),
+            category: finalCategory,
+            user_id: user.id
         }
 
+        let error = null
+        let data = null
+
+        if (isEditMode) {
+            const { error: updateError, data: updatedData } = await supabase
+                .from('upcoming_payments')
+                .update(rawData)
+                .eq('id', editingPayment.id)
+                .select()
+                .single()
+            error = updateError
+            if (updatedData) {
+                setPayments(prev => prev.map(p => p.id === editingPayment.id ? updatedData : p))
+            }
+        } else {
+            const { error: insertError, data: insertedData } = await supabase
+                .from('upcoming_payments')
+                .insert(rawData)
+                .select()
+                .single()
+            error = insertError
+            if (insertedData) {
+                setPayments(prev => [...prev, insertedData])
+            }
+        }
+
+        if (error) {
+            console.error(error)
+            alert("Error saving payment")
+        } else {
+            setIsOpen(false)
+            setEditingPayment(null)
+            setIsCustomCategory(false)
+        }
         setLoading(false)
-        setIsOpen(false)
-        setEditingPayment(null)
-        setIsCustomCategory(false)
     }
 
     async function handleDelete(id: string) {
         if (!confirm("Delete this payment reminder?")) return
-        await deletePayment(id)
+        const supabase = createClient()
+        const { error } = await supabase.from('upcoming_payments').delete().eq('id', id)
+
+        if (error) {
+            alert("Error deleting payment")
+        } else {
+            setPayments(prev => prev.filter(p => p.id !== id))
+        }
     }
 
     const openAddModal = () => {
@@ -90,7 +131,7 @@ export function UpcomingPayments({ initialPayments }: { initialPayments: any[] }
     }
 
     // Sort: Earliest due date first
-    const payments = [...initialPayments].sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+    const sortedPayments = [...payments].sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
 
     return (
         <div className="h-full flex flex-col p-6 pb-2">
@@ -197,11 +238,11 @@ export function UpcomingPayments({ initialPayments }: { initialPayments: any[] }
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-hide">
-                {payments.length === 0 && (
+                {sortedPayments.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4">No upcoming payments.</p>
                 )}
 
-                {payments.map((payment) => {
+                {sortedPayments.map((payment) => {
                     const lowerCat = payment.category?.toLowerCase()
                     const isStandard = ['electricity', 'internet', 'rent', 'subscription'].includes(lowerCat)
                     const DisplayIcon = isStandard ? CATEGORY_ICONS[lowerCat] : (lowerCat === 'other' ? CATEGORY_ICONS['other'] : Tag)

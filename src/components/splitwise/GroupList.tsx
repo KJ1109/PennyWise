@@ -22,7 +22,7 @@ export function GroupList({ groups }: { groups: Group[] }) {
             {groups.map((group) => (
                 <Link
                     key={group.id}
-                    href={`/splitwise/${group.id}`}
+                    href={`/splitwise/group?id=${group.id}`}
                     className="flex flex-col rounded-lg border bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:bg-gray-900 dark:border-gray-800 blue:hover:bg-[#1e3a8a] blue:hover:bg-none group"
                 >
                     <div className="mb-2 flex items-center gap-2">

@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { updateProfile, signOut, updateTheme } from '@/app/actions/settings'
 import { useTheme } from 'next-themes'
 import { LogOut, Moon, Sun, Monitor, User, Wallet, Check, Palette, Upload, Droplet } from 'lucide-react'
 import { formatCurrency } from '@/lib/budget'
 import { useRouter } from 'next/navigation'
 import { Database, Trash2, AlertTriangle, Calendar } from 'lucide-react'
-import { deleteDataByRange, clearAllData, deleteAccount } from '@/app/actions/data-management'
 import {
     Dialog,
     DialogContent,
@@ -80,7 +78,6 @@ export default function SettingsPage() {
             if (updateError) throw updateError
 
             setProfile(prev => prev ? ({ ...prev, avatar_url: publicUrl }) : null)
-            router.refresh() // Refresh server components to update sidebar
         } catch (error: any) {
             console.error(error)
             alert('Error uploading avatar: ' + error.message)
@@ -93,7 +90,10 @@ export default function SettingsPage() {
         async function fetchProfile() {
             const supabase = createClient()
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
+            if (!user) {
+                router.replace('/login')
+                return
+            }
 
             const { data } = await supabase
                 .from('profiles')
@@ -107,36 +107,62 @@ export default function SettingsPage() {
             setLoading(false)
         }
         fetchProfile()
-    }, [])
+    }, [router])
 
     const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setSaving(true)
         const formData = new FormData(e.currentTarget)
+        const supabase = createClient()
 
-        const res = await updateProfile(formData)
-        if (res.error) {
-            alert(res.error)
+        const fullName = formData.get('fullName') as string
+        const monthlyBudget = Number(formData.get('monthlyBudget'))
+        const currency = formData.get('currency') as string
+
+        const { error } = await supabase
+            .from('profiles')
+            .update({
+                full_name: fullName,
+                monthly_budget: monthlyBudget,
+                currency: currency,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', profile?.id)
+
+        if (error) {
+            alert(error.message)
         } else {
             // Optimistic update
             setProfile(prev => prev ? ({
                 ...prev,
-                full_name: formData.get('fullName') as string,
-                monthly_budget: Number(formData.get('monthlyBudget')),
-                currency: formData.get('currency') as string
+                full_name: fullName,
+                monthly_budget: monthlyBudget,
+                currency: currency
             }) : null)
             alert('Profile Updated!')
         }
         setSaving(false)
     }
 
+    const handleThemeUpdate = async (newTheme: string) => {
+        setTheme(newTheme) // Client side immediate
+        if (!profile?.id) return
+
+        const supabase = createClient()
+        await supabase
+            .from('profiles')
+            .update({ theme: newTheme })
+            .eq('id', profile.id)
+    }
+
     const handleSignOut = async () => {
-        setTheme('dark') // Reset to default on logout
-        await signOut()
+        const supabase = createClient()
+        await supabase.auth.signOut()
+        setTheme('dark')
         router.push('/login')
     }
 
-    if (loading) return <div className="p-8 text-foreground">Loading settings...</div>
+    if (loading) return <div className="p-8 text-foreground animate-pulse">Loading settings...</div>
 
     return (
         <main className="flex-1 w-full min-h-screen flex flex-col gap-8 p-4 pb-24 md:pb-8">
@@ -267,35 +293,35 @@ export default function SettingsPage() {
                             <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 rounded-lg bg-muted p-1">
                                 <button
                                     type="button"
-                                    onClick={() => { setTheme('light'); updateTheme('light'); }}
+                                    onClick={() => handleThemeUpdate('light')}
                                     className={`flex items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-all ${theme === 'light' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     <Sun className="h-4 w-4" /> Light
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => { setTheme('dark'); updateTheme('dark'); }}
+                                    onClick={() => handleThemeUpdate('dark')}
                                     className={`flex items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-all ${theme === 'dark' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     <Moon className="h-4 w-4" /> Dark
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => { setTheme('pink'); updateTheme('pink'); }}
+                                    onClick={() => handleThemeUpdate('pink')}
                                     className={`flex items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-all ${theme === 'pink' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     <Palette className="h-4 w-4" /> Pink
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => { setTheme('blue'); updateTheme('blue'); }}
+                                    onClick={() => handleThemeUpdate('blue')}
                                     className={`flex items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-all ${theme === 'blue' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     <Droplet className="h-4 w-4" /> Blue
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => { setTheme('system'); updateTheme('system'); }}
+                                    onClick={() => handleThemeUpdate('system')}
                                     className={`flex items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-all ${theme === 'system' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     <Monitor className="h-4 w-4" /> System
@@ -340,14 +366,14 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Data Management Section */}
-                <DataManagementSection />
+                <DataManagementSection profileId={profile?.id} />
 
             </div>
         </main>
     )
 }
 
-function DataManagementSection() {
+function DataManagementSection({ profileId }: { profileId?: string }) {
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -389,33 +415,63 @@ function DataManagementSection() {
     }
 
     const executeDeletion = async () => {
-        if (!confirmAction) return
+        if (!confirmAction || !profileId) return
 
         setIsLoading(true)
-        let res
+        const supabase = createClient()
+        let success = false
+        let errorMsg = ''
 
-        if (confirmAction.type === 'range' && confirmAction.dataType) {
-            res = await deleteDataByRange(startDate, endDate, confirmAction.dataType)
-        } else if (confirmAction.type === 'all' && confirmAction.dataType) {
-            res = await clearAllData(confirmAction.dataType)
-        } else if (confirmAction.type === 'delete_account') {
-            res = await deleteAccount()
-            if (res.success) {
+        try {
+            if (confirmAction.type === 'range' && confirmAction.dataType === 'expenses') {
+                const { error } = await supabase
+                    .from('expenses')
+                    .delete()
+                    .eq('user_id', profileId)
+                    .gte('date', startDate)
+                    .lte('date', endDate)
+                if (error) throw error
+                success = true
+            } else if (confirmAction.type === 'all' && confirmAction.dataType) {
+                if (confirmAction.dataType === 'expenses' || confirmAction.dataType === 'all') {
+                    const { error } = await supabase.from('expenses').delete().eq('user_id', profileId)
+                    if (error) throw error
+                }
+
+                if (confirmAction.dataType === 'all') {
+                    // Deep Reset
+                    await supabase.from('group_members').delete().eq('user_id', profileId)
+                    await supabase.from('groups').delete().eq('created_by', profileId)
+                    await supabase.from('profiles').update({
+                        full_name: null,
+                        monthly_budget: null,
+                        currency: 'INR',
+                        avatar_url: null,
+                        updated_at: new Date().toISOString()
+                    }).eq('id', profileId)
+                }
+                success = true
+            } else if (confirmAction.type === 'delete_account') {
+                const { error } = await supabase.rpc('delete_own_user')
+                if (error) throw error
+                success = true
                 window.location.href = '/login'
                 return
             }
-        }
 
-        if (res?.error) {
-            alert(res.error)
-        } else {
-            if (confirmAction.type === 'all' && confirmAction.dataType === 'all') {
-                window.location.href = '/onboarding'
-                return
+            if (success) {
+                if (confirmAction.type === 'all' && confirmAction.dataType === 'all') {
+                    window.location.href = '/onboarding'
+                    return
+                }
+                alert('Action completed successfully.')
+                setStartDate('')
+                setEndDate('')
             }
-            alert('Action completed successfully.')
-            setStartDate('')
-            setEndDate('')
+
+        } catch (e: any) {
+            errorMsg = e.message
+            alert('Operation failed: ' + errorMsg)
         }
 
         setIsLoading(false)

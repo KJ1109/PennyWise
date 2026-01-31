@@ -4,7 +4,7 @@ import { formatCurrency } from '@/lib/budget'
 import { EditGroupExpenseDialog } from './EditGroupExpenseDialog'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { deleteGroupExpense } from '@/app/actions/splitwise'
+import { createClient } from '@/lib/supabase/client'
 
 interface ExpenseLedgerProps {
     expenses: any[]
@@ -21,10 +21,18 @@ export function ExpenseLedger({ expenses, members, groupId, currentUserId }: Exp
         if (!confirm('Are you sure you want to delete this expense?')) return
 
         setDeletingId(expenseId)
-        const res = await deleteGroupExpense(expenseId, groupId)
-        if (res.error) {
-            alert(res.error)
+        const supabase = createClient()
+        const { error } = await supabase
+            .from('group_expenses')
+            .delete()
+            .eq('id', expenseId)
+            .eq('group_id', groupId)
+
+        if (error) {
+            alert('Failed to delete expense: ' + error.message)
             setDeletingId(null)
+        } else {
+            window.location.reload()
         }
     }
 

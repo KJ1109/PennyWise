@@ -10,9 +10,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { MoreVertical, LogOut, Trash2 } from 'lucide-react'
-import { deleteGroup, leaveGroup } from '@/app/actions/splitwise'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { calculateBalances } from '@/lib/split'
 
 export function GroupSettingsMenu({
     groupId,
@@ -24,15 +25,41 @@ export function GroupSettingsMenu({
     const router = useRouter()
     const [loading, setLoading] = useState(false)
 
+    // Helper to check if user has non-zero balance
+    const checkBalance = async (userId: string) => {
+        const supabase = createClient()
+        const { data: expenses } = await supabase
+            .from('group_expenses')
+            .select(`
+                *,
+                expense_splits(user_id, manual_member_id, amount_owed)
+            `)
+            .eq('group_id', groupId)
+
+        // Minimal stub for calculateBalances
+        const membersStub = [{ id: userId }]
+        // Map expenses to match calculateBalances expectation if needed, or if it works directly with Supabase response
+        // calculateBalances expects: expenses joined with splits.
+        // Let's assume calculateBalances is robust or we perform simple check manually.
+        const balances = calculateBalances(membersStub, expenses || [])
+        return balances[userId] || 0
+    }
+
     const handleDelete = async () => {
         if (!confirm('Are you sure you want to DELETE this group? This action helps no one and cannot be undone.')) return
 
         setLoading(true)
-        const res = await deleteGroup(groupId)
+        const supabase = createClient()
+
+        const { error } = await supabase
+            .from('groups')
+            .delete()
+            .eq('id', groupId)
+
         setLoading(false)
 
-        if (res?.error) {
-            alert(res.error)
+        if (error) {
+            alert('Failed to delete group: ' + error.message)
         } else {
             router.push('/splitwise')
             router.refresh()
@@ -40,14 +67,39 @@ export function GroupSettingsMenu({
     }
 
     const handleLeave = async () => {
-        if (!confirm('Are you sure you want to leave this group?')) return
-
         setLoading(true)
-        const res = await leaveGroup(groupId)
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            setLoading(false)
+            return
+        }
+
+        // 1. Check Balance
+        const balance = await checkBalance(user.id)
+        if (Math.abs(balance) > 0.01) {
+            alert(`Cannot leave group. You have an outstanding balance of ${balance.toFixed(2)}. Settle up first.`)
+            setLoading(false)
+            return
+        }
+
+        if (!confirm('Are you sure you want to leave this group?')) {
+            setLoading(false)
+            return
+        }
+
+        // 2. Leave
+        const { error } = await supabase
+            .from('group_members')
+            .delete()
+            .eq('group_id', groupId)
+            .eq('user_id', user.id)
+
         setLoading(false)
 
-        if (res?.error) {
-            alert(res.error)
+        if (error) {
+            alert('Failed to leave group: ' + error.message)
         } else {
             router.push('/splitwise')
             router.refresh()

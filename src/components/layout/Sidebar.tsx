@@ -8,7 +8,7 @@ import { useTheme } from 'next-themes'
 
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Wallet, LogOut } from 'lucide-react'
-import { signOut } from '@/app/actions/settings'
+import { createClient } from '@/lib/supabase/client'
 
 import {
     AlertDialog,
@@ -39,8 +39,10 @@ export function Sidebar({ user }: SidebarProps) {
 
     const handleSignOut = async () => {
         setTheme('dark') // Reset to default on logout to prevent theme bleeding
-        await signOut()
+        const supabase = createClient()
+        await supabase.auth.signOut()
         router.push('/login')
+        router.refresh()
     }
 
     return (

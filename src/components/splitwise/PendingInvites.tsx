@@ -2,23 +2,55 @@
 
 import { formatCurrency } from '@/lib/budget'
 import { Check, X, Mail } from 'lucide-react'
-import { respondToInvite } from '@/app/actions/splitwise'
+import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 
 interface PendingInvitesProps {
     invites: any[]
+    onRespond: () => void
 }
 
-export function PendingInvites({ invites }: PendingInvitesProps) {
+export function PendingInvites({ invites, onRespond }: PendingInvitesProps) {
     const [processing, setProcessing] = useState<string | null>(null)
 
     if (invites.length === 0) return null
 
     const handleRespond = async (inviteId: string, accept: boolean) => {
         setProcessing(inviteId)
-        const res = await respondToInvite(inviteId, accept)
-        if (res.error) {
-            alert(res.error)
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) return
+
+        try {
+            if (accept) {
+                // 1. Get Invite details
+                const { data: invite } = await supabase
+                    .from('group_invites')
+                    .select('*')
+                    .eq('id', inviteId)
+                    .single()
+
+                if (invite) {
+                    // 2. Add as Member (Ignore if already member)
+                    const { error: memberError } = await supabase
+                        .from('group_members')
+                        .insert({ group_id: invite.group_id, user_id: user.id })
+
+                    if (memberError && memberError.code !== '23505') { // 23505 = unique_violation
+                        throw memberError
+                    }
+
+                    // 3. Update Invite
+                    await supabase.from('group_invites').update({ status: 'accepted' }).eq('id', inviteId)
+                }
+            } else {
+                // Reject
+                await supabase.from('group_invites').update({ status: 'rejected' }).eq('id', inviteId)
+            }
+            onRespond()
+        } catch (error: any) {
+            alert('Error processing invite: ' + error.message)
         }
         setProcessing(null)
     }

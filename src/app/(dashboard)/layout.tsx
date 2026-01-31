@@ -1,29 +1,48 @@
-import { AppShell } from '@/components/layout/AppShell'
-import { createClient } from '@/lib/supabase/server'
-import { getCachedUser } from '@/lib/auth-cache'
-import { redirect } from 'next/navigation'
+'use client'
 
-export default async function DashboardLayout({
+import { AppShell } from '@/components/layout/AppShell'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
+import { AuthGuard } from '@/components/auth/AuthGuard'
+
+export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    const { user } = await getCachedUser()
+    const [user, setUser] = useState<{
+        name: string
+        email: string
+        avatarUrl?: string
+    } | null>(null)
 
-    if (!user) redirect('/login')
+    useEffect(() => {
+        async function fetchProfile() {
+            const supabase = createClient()
+            const { data: { user: authUser } } = await supabase.auth.getUser()
 
-    const supabase = await createClient()
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, avatar_url')
-        .eq('id', user.id)
-        .single()
+            if (authUser) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('full_name, avatar_url')
+                    .eq('id', authUser.id)
+                    .single()
 
-    const userData = {
-        name: profile?.full_name || 'User',
-        email: user.email || 'No Email',
-        avatarUrl: profile?.avatar_url
-    }
+                setUser({
+                    name: profile?.full_name || 'User',
+                    email: authUser.email || '',
+                    avatarUrl: profile?.avatar_url
+                })
+            }
+        }
+        fetchProfile()
+    }, [])
 
-    return <AppShell user={userData}>{children}</AppShell>
+    return (
+        <AuthGuard>
+            <AppShell user={user || { name: '...', email: '...' }}>
+                {children}
+            </AppShell>
+        </AuthGuard>
+    )
 }

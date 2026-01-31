@@ -1,71 +1,95 @@
-import { createClient } from '@/lib/supabase/server'
-import { getCachedUser } from '@/lib/auth-cache'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions'
 import { ExpenseForm } from '@/components/dashboard/ExpenseForm'
 import { CategoryGrid } from '@/components/dashboard/CategoryGrid'
 import { calculateDailyBudget, formatCurrency } from '@/lib/budget'
-import { redirect } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { RightPanel } from '@/components/layout/RightPanel'
 import { UpcomingPayments } from '@/components/dashboard/UpcomingPayments'
 import { SavingsGoals } from '@/components/dashboard/SavingsGoals'
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton'
+import { useRouter } from 'next/navigation'
 
-export default async function DashboardPage() {
-    const { user } = await getCachedUser()
+export default function DashboardPage() {
+    const router = useRouter()
+    const [isLoading, setIsLoading] = useState(true)
+    const [data, setData] = useState<{
+        expenses: any[]
+        payments: any[]
+        goals: any[]
+        monthlyBudget: number
+        userId: string | null
+    }>({
+        expenses: [],
+        payments: [],
+        goals: [],
+        monthlyBudget: 0,
+        userId: null
+    })
 
-    if (!user) {
-        redirect('/login')
+    useEffect(() => {
+        async function loadDashboardData() {
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+
+            if (!user) {
+                router.replace('/login')
+                return
+            }
+
+            // Parallel Fetch
+            const [
+                { data: profile },
+                { data: expenses },
+                { data: payments },
+                { data: goals }
+            ] = await Promise.all([
+                supabase.from('profiles').select('monthly_budget').eq('id', user.id).single(),
+                supabase.from('expenses').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+                supabase.from('upcoming_payments').select('*').eq('user_id', user.id).eq('is_paid', false).order('due_date', { ascending: true }),
+                supabase.from('savings_goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+            ])
+
+            setData({
+                expenses: expenses || [],
+                payments: payments || [],
+                goals: goals || [],
+                monthlyBudget: profile?.monthly_budget || 0,
+                userId: user.id
+            })
+            setIsLoading(false)
+        }
+
+        loadDashboardData()
+    }, [router])
+
+    if (isLoading || !data.userId) {
+        return (
+            <>
+                <main className="flex-1 pb-24 md:pb-0 overflow-y-auto">
+                    <DashboardSkeleton />
+                </main>
+                <div className="hidden xl:block w-[350px]"></div> {/* Spacer for RightPanel */}
+            </>
+        )
     }
-
-    const supabase = await createClient()
-
-    // Parallel Data Fetching
-    const [
-        { data: profile },
-        { data: expenses },
-        { data: payments },
-        { data: goals }
-    ] = await Promise.all([
-        // 1. Profile (for Budget)
-        supabase.from('profiles').select('monthly_budget').eq('id', user.id).single(),
-
-        // 2. All Expenses (for Charts/History)
-        supabase.from('expenses').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-
-        // 3. Upcoming Payments (for RightPanel)
-        supabase.from('upcoming_payments').select('*').eq('user_id', user.id).eq('is_paid', false).order('due_date', { ascending: true }),
-
-        // 4. Savings Goals (for RightPanel)
-        supabase.from('savings_goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
-    ])
-
-    if (!profile) redirect('/onboarding')
-
-    const monthlyBudget = profile.monthly_budget || 0
-    const allExpenses = expenses || []
 
     // Calculations for THIS MONTH Only
     const today = new Date()
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-
-    // const spentThisMonth = allExpenses.filter(e => new Date(e.date) >= startOfMonth).reduce((sum, e) => sum + Number(e.amount), 0)
-
-    // Filter for today's expenses specifically
     const todayString = today.toISOString().split('T')[0]
 
-    const spentToday = allExpenses
+    const spentToday = data.expenses
         .filter(e => {
-            // Simple string match for YYYY-MM-DD
-            const match = e.date === todayString || e.date.startsWith(todayString)
-            return match
+            return e.date === todayString || e.date.startsWith(todayString)
         })
         .reduce((sum, e) => sum + Number(e.amount), 0)
 
-    const dailyBudget = calculateDailyBudget(monthlyBudget)
+    const dailyBudget = calculateDailyBudget(data.monthlyBudget)
     const remainingToday = Math.max(dailyBudget - spentToday, 0)
     const percentage = Math.min((spentToday / dailyBudget) * 100, 100)
-
-    // Calculate degrees for conic gradient (360 degrees = 100%)
     const degrees = (percentage / 100) * 360
 
     return (
@@ -81,9 +105,9 @@ export default async function DashboardPage() {
                         <div className="flex items-center gap-4">
                             <div className="text-right hidden sm:block">
                                 <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Monthly Budget</p>
-                                <p className="text-xl font-bold text-primary">₹{formatCurrency(monthlyBudget).replace('₹', '')}</p>
+                                <p className="text-xl font-bold text-primary">₹{formatCurrency(data.monthlyBudget).replace('₹', '')}</p>
                             </div>
-                            <ExpenseForm userId={user.id}>
+                            <ExpenseForm userId={data.userId}>
                                 <button className="bg-primary hover:opacity-90 transition-opacity text-primary-foreground p-3 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
                                     <Plus className="h-6 w-6" />
                                 </button>
@@ -130,25 +154,25 @@ export default async function DashboardPage() {
 
                         {/* Right Grid: Categories */}
                         <div className="col-span-12 lg:col-span-7">
-                            <CategoryGrid expenses={allExpenses} />
+                            <CategoryGrid expenses={data.expenses} />
                         </div>
                     </div>
 
                     <div className="flex-1">
-                        <RecentTransactions transactions={allExpenses} />
+                        <RecentTransactions transactions={data.expenses} />
                     </div>
                     {/* Mobile/Tablet Content (Visible only on screens smaller than XL) */}
                     <div className="xl:hidden grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
                         <div className="bg-card rounded-2xl border border-border overflow-hidden h-auto min-h-[400px] shadow-sm">
-                            <UpcomingPayments initialPayments={payments || []} />
+                            <UpcomingPayments initialPayments={data.payments || []} />
                         </div>
                         <div className="bg-card rounded-2xl border border-border overflow-hidden h-auto min-h-[400px] shadow-sm">
-                            <SavingsGoals initialGoals={goals || []} />
+                            <SavingsGoals initialGoals={data.goals || []} />
                         </div>
                     </div>
                 </div>
             </main>
-            <RightPanel payments={payments || []} goals={goals || []} />
+            <RightPanel payments={data.payments || []} goals={data.goals || []} />
         </>
     )
 }

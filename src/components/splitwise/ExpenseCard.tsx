@@ -4,7 +4,7 @@ import { EditGroupExpenseDialog } from './EditGroupExpenseDialog'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { formatCurrency } from '@/lib/budget'
-import { deleteGroupExpense } from '@/app/actions/splitwise'
+import { createClient } from '@/lib/supabase/client'
 
 export function ExpenseCard({
     expense,
@@ -24,10 +24,18 @@ export function ExpenseCard({
         if (!confirm('Are you sure you want to delete this expense?')) return
 
         setIsDeleting(true)
-        const res = await deleteGroupExpense(expense.id, groupId)
-        if (res.error) {
-            alert(res.error)
+        const supabase = createClient()
+        const { error } = await supabase
+            .from('group_expenses')
+            .delete()
+            .eq('id', expense.id)
+            .eq('group_id', groupId)
+
+        if (error) {
+            alert('Failed to delete expense: ' + error.message)
             setIsDeleting(false)
+        } else {
+            window.location.reload()
         }
     }
 

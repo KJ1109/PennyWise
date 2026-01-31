@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Users, Trash2, X } from 'lucide-react'
-import { removeGroupMember } from '@/app/actions/splitwise'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export function ManageMembersDialog({
@@ -32,14 +32,38 @@ export function ManageMembersDialog({
         if (!confirm(`Are you sure you want to remove ${memberName}? This action cannot be undone.`)) return
 
         setLoadingId(memberId)
-        const res = await removeGroupMember(groupId, memberId, memberType)
+        const supabase = createClient()
+
+        // Try to delete
+        let error = null
+        if (memberType === 'user') {
+            const { error: err } = await supabase
+                .from('group_members')
+                .delete()
+                .eq('group_id', groupId)
+                .eq('user_id', memberId)
+            error = err
+        } else {
+            const { error: err } = await supabase
+                .from('manual_members')
+                .delete()
+                .eq('group_id', groupId)
+                .eq('id', memberId)
+            error = err
+        }
+
         setLoadingId(null)
 
-        if (res?.error) {
-            alert(res.error)
+        if (error) {
+            // Likely a FK constraint if they have expenses
+            if (error.code === '23503') { // foreign_key_violation
+                alert(`Cannot remove ${memberName} because they are part of existing expenses. Settle and delete their expenses first.`)
+            } else {
+                alert('Failed to remove member: ' + error.message)
+            }
         } else {
             // Success
-            router.refresh()
+            window.location.reload()
         }
     }
 
