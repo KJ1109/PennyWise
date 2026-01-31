@@ -89,7 +89,7 @@ export default function DashboardPage() {
 
     const dailyBudget = calculateDailyBudget(data.monthlyBudget)
     const remainingToday = Math.max(dailyBudget - spentToday, 0)
-    const percentage = Math.min((spentToday / dailyBudget) * 100, 100)
+    const percentage = dailyBudget > 0 ? Math.min((spentToday / dailyBudget) * 100, 100) : 0
     const degrees = (percentage / 100) * 360
 
     return (

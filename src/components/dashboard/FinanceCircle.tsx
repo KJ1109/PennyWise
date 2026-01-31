@@ -8,7 +8,7 @@ interface FinanceCircleProps {
 }
 
 export function FinanceCircle({ dailyBudget, spentToday }: FinanceCircleProps) {
-    const percentage = Math.min((spentToday / dailyBudget) * 100, 100)
+    const percentage = dailyBudget > 0 ? Math.min((spentToday / dailyBudget) * 100, 100) : 0
     const remaining = Math.max(dailyBudget - spentToday, 0)
     const isOverBudget = spentToday > dailyBudget
 
