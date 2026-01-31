@@ -55,7 +55,7 @@ export function SettleUpDialog({ groupId, members, userId }: { groupId: string, 
             const recipientNet = balances[recipientId] || 0
 
             // If Payer owes money (Net < 0) and Recipient is owed money (Net > 0)
-            if (payerNet < -0.01 && recipientNet > 0.01) {
+            if (payerNet < -0.05 && recipientNet > 0.05) {
                 const suggested = Math.min(Math.abs(payerNet), recipientNet)
                 setAmount(suggested.toFixed(2))
             } else {
