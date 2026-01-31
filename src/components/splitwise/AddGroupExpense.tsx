@@ -11,7 +11,13 @@ export function AddGroupExpense({ groupId, members, userId }: { groupId: string,
     const [isOpen, setIsOpen] = useState(false)
     const [amount, setAmount] = useState('')
     const [description, setDescription] = useState('')
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    // Use local time for default date (YYYY-MM-DD)
+    const [date, setDate] = useState(() => {
+        const d = new Date()
+        const offset = d.getTimezoneOffset()
+        const local = new Date(d.getTime() - (offset * 60 * 1000))
+        return local.toISOString().split('T')[0]
+    })
     const [loading, setLoading] = useState(false)
     const [splitType, setSplitType] = useState<SplitType>('equal')
     const [payerId, setPayerId] = useState(userId)
@@ -21,14 +27,22 @@ export function AddGroupExpense({ groupId, members, userId }: { groupId: string,
 
     const router = useRouter()
 
-    // Reset values when switching types
+    // Reset values when switching types or opening
     useEffect(() => {
         if (isOpen) {
             const initial: Record<string, string> = {}
             members.forEach(m => initial[m.id] = '')
             setSplitValues(initial)
+
+            // Allow date to persist if actively editing? No, 'Add' usually implies 'Now'.
+            // But if they cancel and repoen, maybe they want to start fresh? 
+            // Let's force reset to Today to prevent "Yesterday" bug persistence.
+            const d = new Date()
+            const offset = d.getTimezoneOffset()
+            const local = new Date(d.getTime() - (offset * 60 * 1000))
+            setDate(local.toISOString().split('T')[0])
         }
-    }, [splitType, isOpen, members])
+    }, [isOpen, members]) // Removed splitType dependency for date reset to avoid overwriting user input when changing split type
 
     const calculateSplits = (totalAmount: number) => {
         const splits: { id: string, amount_owed: number }[] = []
@@ -157,7 +171,11 @@ export function AddGroupExpense({ groupId, members, userId }: { groupId: string,
         } else {
             setAmount('')
             setDescription('')
-            setDate(new Date().toISOString().split('T')[0])
+            // Reset Date to Local Today
+            const d = new Date()
+            const offset = d.getTimezoneOffset()
+            const local = new Date(d.getTime() - (offset * 60 * 1000))
+            setDate(local.toISOString().split('T')[0])
             setIsOpen(false)
             setSplitValues({})
             setPayerId(userId)
