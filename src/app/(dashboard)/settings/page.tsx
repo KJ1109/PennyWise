@@ -414,6 +414,44 @@ function DataManagementSection({ profileId }: { profileId?: string }) {
         })
     }
 
+    const checkDebts = async (supabase: any, uid: string) => {
+        // 1. Get all groups user is in
+        const { data: memberGroups } = await supabase.from('group_members').select('group_id').eq('user_id', uid)
+        const groupIds = memberGroups?.map((g: any) => g.group_id) || []
+
+        if (groupIds.length > 0) {
+            // 2. Calculate Balances for these groups
+            // We fetch ALL expenses for these groups to calculate net balance properly
+            const { data: groupExpenses } = await supabase
+                .from('group_expenses')
+                .select(`
+                    *,
+                    expense_splits(user_id, amount_owed)
+                `)
+                .in('group_id', groupIds)
+
+            // Calculate User's Net Balance
+            let netBalance = 0
+            groupExpenses?.forEach((e: any) => {
+                // Paid by user? (+ Credit)
+                if (e.payer_id === uid) {
+                    netBalance += Number(e.amount)
+                }
+                // Splits owed by user? (- Debit)
+                e.expense_splits.forEach((s: any) => {
+                    if (s.user_id === uid) {
+                        netBalance -= Number(s.amount_owed)
+                    }
+                })
+            })
+
+            // 3. Block if unsettled
+            if (Math.abs(netBalance) > 0.05) { // 5 cents tolerance
+                throw new Error(`You have unsettled debts/credits (Net: ${formatCurrency(netBalance)}). Please settle up in all groups before performing this action.`)
+            }
+        }
+    }
+
     const executeDeletion = async () => {
         if (!confirmAction || !profileId) return
 
@@ -423,6 +461,14 @@ function DataManagementSection({ profileId }: { profileId?: string }) {
         let errorMsg = ''
 
         try {
+            // STRICT DEBT CHECK for ALL Destructive Splitwise-related or Account-level actions
+            // The user requested: "only if the user has not pending owing to anyone if owes the user shouldnt be able to delete expenses or reset account or delete account"
+            // We interpret this as: Block "Clear All Expenses", "Reset Account", "Delete Account".
+            // Range deletion might be fine, but to be safe/strict as requested, let's block heavy actions.
+            if (confirmAction.type === 'all' || confirmAction.type === 'delete_account') {
+                await checkDebts(supabase, profileId)
+            }
+
             if (confirmAction.type === 'range' && confirmAction.dataType === 'expenses') {
                 const { error } = await supabase
                     .from('expenses')
@@ -438,56 +484,20 @@ function DataManagementSection({ profileId }: { profileId?: string }) {
                 if (error) throw error
 
                 if (confirmAction.dataType === 'all') {
-                    // --- Strict Debt Check ---
-                    // 1. Get all groups user is in
-                    const { data: memberGroups } = await supabase.from('group_members').select('group_id').eq('user_id', profileId)
-                    const groupIds = memberGroups?.map(g => g.group_id) || []
-
-                    if (groupIds.length > 0) {
-                        // 2. Calculate Balances for these groups
-                        // We fetch ALL expenses for these groups to calculate net balance properly
-                        const { data: groupExpenses } = await supabase
-                            .from('group_expenses')
-                            .select(`
-                                *,
-                                expense_splits(user_id, amount_owed)
-                            `)
-                            .in('group_id', groupIds)
-
-                        // Calculate User's Net Balance
-                        let netBalance = 0
-                        groupExpenses?.forEach((e: any) => {
-                            // Paid by user? (+ Credit)
-                            if (e.payer_id === profileId) {
-                                netBalance += Number(e.amount)
-                            }
-                            // Splits owed by user? (- Debit)
-                            e.expense_splits.forEach((s: any) => {
-                                if (s.user_id === profileId) {
-                                    netBalance -= Number(s.amount_owed)
-                                }
-                            })
-                        })
-
-                        // 3. Block if unsettled
-                        if (Math.abs(netBalance) > 0.05) { // 5 cents tolerance
-                            throw new Error(`You have unsettled debts/credits (Net: ${formatCurrency(netBalance)}). Please settle up in all groups before resetting your account.`)
-                        }
-                    }
-
                     // --- Deep Reset ---
-                    // 1. Delete Savings Goals (NEW)
+                    // 1. Delete Savings Goals
                     await supabase.from('savings_goals').delete().eq('user_id', profileId)
 
-                    // 2. Delete Groups Created by User (Cascades usually, but explicit clean)
-                    // If DB cascade is ON, this deletes members/expenses. If not, we might error or leave data.
-                    // Assuming Cascade for 'created_by' owner -> groups -> (expenses, members)
+                    // 2. Delete Upcoming Payments (NEW)
+                    await supabase.from('upcoming_payments').delete().eq('user_id', profileId)
+
+                    // 3. Delete Groups Created by User
                     await supabase.from('groups').delete().eq('created_by', profileId)
 
-                    // 3. Leave other groups (Delete membership)
+                    // 4. Leave other groups
                     await supabase.from('group_members').delete().eq('user_id', profileId)
 
-                    // 4. Reset Profile
+                    // 5. Reset Profile
                     await supabase.from('profiles').update({
                         full_name: null,
                         monthly_budget: null,
