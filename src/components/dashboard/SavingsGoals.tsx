@@ -127,7 +127,7 @@ export function SavingsGoals({ initialGoals }: { initialGoals: any[] }) {
                     return (
                         <div key={goal.id} className="group relative">
                             {/* Actions Group (Hover) */}
-                            <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                            <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
                                 <button
                                     onClick={() => setEditingGoal(goal)}
                                     className="p-1.5 bg-primary/10 text-primary rounded-md hover:bg-primary/20 blue:text-blue-300 blue:bg-blue-400/10 blue:hover:bg-blue-400/20"

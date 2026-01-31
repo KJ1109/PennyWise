@@ -226,7 +226,7 @@ export function UpcomingPayments({ initialPayments }: { initialPayments: any[] }
                             <p className="text-lg font-bold mt-1 text-foreground">{formatCurrency(payment.amount)}</p>
 
                             {/* Hover Actions */}
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                            <div className="absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex gap-1">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleDelete(payment.id); }}
                                     className="p-1.5 bg-destructive/10 text-destructive rounded-md hover:bg-destructive/20"
