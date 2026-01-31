@@ -432,16 +432,62 @@ function DataManagementSection({ profileId }: { profileId?: string }) {
                     .lte('date', endDate)
                 if (error) throw error
                 success = true
-            } else if (confirmAction.type === 'all' && confirmAction.dataType) {
-                if (confirmAction.dataType === 'expenses' || confirmAction.dataType === 'all') {
-                    const { error } = await supabase.from('expenses').delete().eq('user_id', profileId)
-                    if (error) throw error
-                }
+            } else if (confirmAction.type === 'all' && (confirmAction.dataType === 'expenses' || confirmAction.dataType === 'all')) {
+                // Delete Personal Expenses
+                const { error } = await supabase.from('expenses').delete().eq('user_id', profileId)
+                if (error) throw error
 
                 if (confirmAction.dataType === 'all') {
-                    // Deep Reset
-                    await supabase.from('group_members').delete().eq('user_id', profileId)
+                    // --- Strict Debt Check ---
+                    // 1. Get all groups user is in
+                    const { data: memberGroups } = await supabase.from('group_members').select('group_id').eq('user_id', profileId)
+                    const groupIds = memberGroups?.map(g => g.group_id) || []
+
+                    if (groupIds.length > 0) {
+                        // 2. Calculate Balances for these groups
+                        // We fetch ALL expenses for these groups to calculate net balance properly
+                        const { data: groupExpenses } = await supabase
+                            .from('group_expenses')
+                            .select(`
+                                *,
+                                expense_splits(user_id, amount_owed)
+                            `)
+                            .in('group_id', groupIds)
+
+                        // Calculate User's Net Balance
+                        let netBalance = 0
+                        groupExpenses?.forEach((e: any) => {
+                            // Paid by user? (+ Credit)
+                            if (e.payer_id === profileId) {
+                                netBalance += Number(e.amount)
+                            }
+                            // Splits owed by user? (- Debit)
+                            e.expense_splits.forEach((s: any) => {
+                                if (s.user_id === profileId) {
+                                    netBalance -= Number(s.amount_owed)
+                                }
+                            })
+                        })
+
+                        // 3. Block if unsettled
+                        if (Math.abs(netBalance) > 0.05) { // 5 cents tolerance
+                            throw new Error(`You have unsettled debts/credits (Net: ${formatCurrency(netBalance)}). Please settle up in all groups before resetting your account.`)
+                        }
+                    }
+
+                    // --- Deep Reset ---
+                    // 1. Delete Savings Goals (NEW)
+                    await supabase.from('savings_goals').delete().eq('user_id', profileId)
+
+                    // 2. Delete Groups Created by User (Cascades usually, but explicit clean)
+                    // If DB cascade is ON, this deletes members/expenses. If not, we might error or leave data.
+                    // Assuming Cascade for 'created_by' owner -> groups -> (expenses, members)
                     await supabase.from('groups').delete().eq('created_by', profileId)
+
+                    // 3. Leave other groups (Delete membership)
+                    await supabase.from('group_members').delete().eq('user_id', profileId)
+
+                    // 4. Reset Profile
                     await supabase.from('profiles').update({
                         full_name: null,
                         monthly_budget: null,
