@@ -8,7 +8,13 @@ import { Button } from '@/components/ui/button'
 
 export function ExpenseForm({ userId, children }: { userId: string, children: React.ReactNode }) {
     const [isOpen, setIsOpen] = useState(false)
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    // Use local time for default date (YYYY-MM-DD) to prevent "yesterday" bug in positive timezones
+    const [date, setDate] = useState(() => {
+        const d = new Date()
+        const offset = d.getTimezoneOffset()
+        const local = new Date(d.getTime() - (offset * 60 * 1000))
+        return local.toISOString().split('T')[0]
+    })
     const [amount, setAmount] = useState('')
     const [category, setCategory] = useState('')
     const [description, setDescription] = useState('')

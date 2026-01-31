@@ -78,8 +78,11 @@ export default function DashboardPage() {
     }
 
     // Calculations for THIS MONTH Only
+    // Fix: Use Local Date for "Today" calculation to match user input
     const today = new Date()
-    const todayString = today.toISOString().split('T')[0]
+    const offset = today.getTimezoneOffset()
+    const localToday = new Date(today.getTime() - (offset * 60 * 1000))
+    const todayString = localToday.toISOString().split('T')[0]
 
     const spentToday = data.expenses
         .filter(e => {

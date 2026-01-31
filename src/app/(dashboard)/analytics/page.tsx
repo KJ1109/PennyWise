@@ -55,7 +55,11 @@ export default function AnalyticsPage() {
             const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
             const startOfWeek = new Date(today)
             startOfWeek.setDate(today.getDate() - today.getDay())
-            const todayString = today.toISOString().split('T')[0]
+
+            // Fix: Use Local Date for "Today" calculation
+            const offset = today.getTimezoneOffset()
+            const localToday = new Date(today.getTime() - (offset * 60 * 1000))
+            const todayString = localToday.toISOString().split('T')[0]
 
             const spentThisMonth = allExpenses
                 .filter(e => new Date(e.date) >= startOfMonth)
