@@ -17,7 +17,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
             const { data: { session } } = await supabase.auth.getSession()
 
             if (!session) {
-                router.replace('/login')
+                // If offline, assume session might be valid/cached and allow access to cached UI
+                if (navigator.onLine) {
+                    router.replace('/login')
+                } else {
+                    console.log('Offline: Allow access to cached pages despite potential session expiry')
+                    setIsAuthorized(true) // Allow render
+                    setIsLoading(false)
+                }
                 return
             }
 
@@ -29,6 +36,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         checkAuth()
 
         // Set up listener for future auth changes (e.g. sign out from another tab/window)
+        const supabase = createClient()
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             // Fix: Don't force logout if we are just offline and session refresh failed
             if (event === 'SIGNED_OUT' || !session) {
