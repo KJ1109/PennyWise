@@ -486,25 +486,30 @@ function DataManagementSection({ profileId }: { profileId?: string }) {
                 if (confirmAction.dataType === 'all') {
                     // --- Deep Reset ---
                     // 1. Delete Savings Goals
-                    await supabase.from('savings_goals').delete().eq('user_id', profileId)
+                    const { error: goalsError } = await supabase.from('savings_goals').delete().eq('user_id', profileId)
+                    if (goalsError) throw new Error('Failed to delete savings goals: ' + goalsError.message)
 
-                    // 2. Delete Upcoming Payments (NEW)
-                    await supabase.from('upcoming_payments').delete().eq('user_id', profileId)
+                    // 2. Delete Upcoming Payments
+                    const { error: paymentsError } = await supabase.from('upcoming_payments').delete().eq('user_id', profileId)
+                    if (paymentsError) throw new Error('Failed to delete upcoming payments: ' + paymentsError.message)
 
                     // 3. Delete Groups Created by User
-                    await supabase.from('groups').delete().eq('created_by', profileId)
+                    const { error: groupsError } = await supabase.from('groups').delete().eq('created_by', profileId)
+                    if (groupsError) throw new Error('Failed to delete groups: ' + groupsError.message)
 
                     // 4. Leave other groups
-                    await supabase.from('group_members').delete().eq('user_id', profileId)
+                    const { error: membersError } = await supabase.from('group_members').delete().eq('user_id', profileId)
+                    if (membersError) throw new Error('Failed to leave groups: ' + membersError.message)
 
                     // 5. Reset Profile
-                    await supabase.from('profiles').update({
+                    const { error: profileError } = await supabase.from('profiles').update({
                         full_name: null,
                         monthly_budget: null,
                         currency: 'INR',
                         avatar_url: null,
                         updated_at: new Date().toISOString()
                     }).eq('id', profileId)
+                    if (profileError) throw new Error('Failed to reset profile: ' + profileError.message)
                 }
                 success = true
             } else if (confirmAction.type === 'delete_account') {

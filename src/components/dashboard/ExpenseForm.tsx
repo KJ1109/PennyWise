@@ -34,7 +34,9 @@ export function ExpenseForm({ userId, children }: { userId: string, children: Re
             setDescription('')
             setDate(new Date().toISOString().split('T')[0])
             setIsOpen(false)
-            router.refresh()
+            setIsOpen(false)
+            // Force reload to update all dashboard components (Analytics, Recent Transactions)
+            window.location.reload()
         } else {
             alert('Error adding expense')
         }
