@@ -14,24 +14,36 @@ function ScoreBar({ label, score, colorClass, info, hoverTextColorClass }: {
     info: { desc: string, good: string, normal: string, bad: string },
     hoverTextColorClass: string
 }) {
+    const [isOpen, setIsOpen] = useState(false)
+
     return (
         <div className="space-y-1.5">
             <div className="flex justify-between items-center text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 blue:text-gray-300 font-display">
-                <div className="flex items-center gap-1.5 relative group cursor-help">
+                <div className="flex items-center gap-1.5 relative">
                     <span>{label}</span>
-                    <Info size={12} className={`text-gray-300 transition-colors ${hoverTextColorClass}`} />
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className={`focus:outline-none ${isOpen ? 'text-gray-900 dark:text-white' : 'text-gray-300'}`}
+                    >
+                        <Info size={12} className={`transition-colors ${hoverTextColorClass}`} />
+                    </button>
 
                     {/* Tooltip */}
-                    <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-800 text-white text-xs rounded-xl shadow-xl border border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 normal-case font-sans tracking-normal">
-                        <p className="mb-2 font-medium text-gray-200 leading-snug">{info.desc}</p>
-                        <div className="space-y-1 text-[10px] text-gray-400 border-t border-gray-700 pt-2">
-                            <div className="flex justify-between items-center"><span className="text-emerald-400 font-bold">Good (80-100)</span> <span>{info.good}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-yellow-400 font-bold">Normal (60-79)</span> <span>{info.normal}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-red-400 font-bold">Bad (0-59)</span> <span>{info.bad}</span></div>
+                    {isOpen && (
+                        <div
+                            className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-gray-800 text-white text-xs rounded-xl shadow-xl border border-gray-700 z-50 normal-case font-sans tracking-normal"
+                            onClick={() => setIsOpen(false)} // Close on click
+                        >
+                            <p className="mb-2 font-medium text-gray-200 leading-snug">{info.desc}</p>
+                            <div className="space-y-1 text-[10px] text-gray-400 border-t border-gray-700 pt-2">
+                                <div className="flex justify-between items-center"><span className="text-emerald-400 font-bold">Good (80-100)</span> <span>{info.good}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-yellow-400 font-bold">Normal (60-79)</span> <span>{info.normal}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-red-400 font-bold">Bad (0-59)</span> <span>{info.bad}</span></div>
+                            </div>
+                            {/* Arrow */}
+                            <div className="absolute top-full left-4 -mt-px border-4 border-transparent border-t-gray-800"></div>
                         </div>
-                        {/* Arrow */}
-                        <div className="absolute top-full left-4 -mt-px border-4 border-transparent border-t-gray-800"></div>
-                    </div>
+                    )}
                 </div>
                 <span className={colorClass.replace('bg-', 'text-')}>{Math.round(score)}%</span>
             </div>
