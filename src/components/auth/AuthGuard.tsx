@@ -15,13 +15,16 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
             const supabase = createClient()
 
             // Check current session
-            const { data: { session } } = await supabase.auth.getSession()
+            const { data: { session }, error } = await supabase.auth.getSession()
+            console.log('AuthGuard Check:', { session, error, online: navigator.onLine })
 
             if (!session) {
                 // Check REAL connection status before redirecting
                 const status = await Network.getStatus()
+                console.log('Network Status Check:', status)
 
                 if (status.connected) {
+                    console.log('Redirecting to login (Online + No Session)')
                     router.replace('/login')
                 } else {
                     console.log('Offline: Allow access to cached pages despite potential session expiry')
