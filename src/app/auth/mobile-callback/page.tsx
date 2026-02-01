@@ -14,6 +14,10 @@ export default function MobileCallback() {
         const hash = window.location.hash
 
         // Redirect to the App
+        // The Mobile App will handle the Session Exchange internally or via deep link listener.
+        // Note: New User triggering might fail here if the Mobile App doesn't call an endpoint to create profile.
+        // HACK: We can't easily upsert profile here because we don't have the Session Cookie (it's in the hash/code).
+        // The Mobile App must handle "Onboarding" redirection itself.
         window.location.href = `com.pennywise.app://auth${search}${hash}`
     }, [])
 

@@ -38,11 +38,16 @@ export function Sidebar({ user }: SidebarProps) {
     const [isCollapsed, setIsCollapsed] = useState(false)
 
     const handleSignOut = async () => {
-        setTheme('dark') // Reset to default on logout to prevent theme bleeding
+        setTheme('dark')
+        // Clear all local state to prevent APK persistence issues
+        localStorage.clear()
+        sessionStorage.clear()
+
         const supabase = createClient()
         await supabase.auth.signOut()
-        router.push('/login')
-        router.refresh()
+
+        // Force hard redirect to clear memory state
+        window.location.href = '/login'
     }
 
     return (

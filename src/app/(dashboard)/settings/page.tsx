@@ -158,8 +158,12 @@ export default function SettingsPage() {
     const handleSignOut = async () => {
         const supabase = createClient()
         await supabase.auth.signOut()
+
+        localStorage.clear()
+        sessionStorage.clear()
         setTheme('dark')
-        router.push('/login')
+
+        window.location.href = '/login'
     }
 
     if (loading) return <div className="p-8 text-foreground animate-pulse">Loading settings...</div>
@@ -515,6 +519,11 @@ function DataManagementSection({ profileId }: { profileId?: string }) {
             } else if (confirmAction.type === 'delete_account') {
                 const { error } = await supabase.rpc('delete_own_user')
                 if (error) throw error
+
+                // Cleanup local state immediately
+                localStorage.clear()
+                sessionStorage.clear()
+
                 success = true
                 window.location.href = '/login'
                 return

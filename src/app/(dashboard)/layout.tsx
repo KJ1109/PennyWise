@@ -22,11 +22,40 @@ export default function DashboardLayout({
             const { data: { user: authUser } } = await supabase.auth.getUser()
 
             if (authUser) {
-                const { data: profile } = await supabase
+                // Fetch basic profile + budget
+                const { data: fetchResult } = await supabase
                     .from('profiles')
-                    .select('full_name, avatar_url')
+                    .select('full_name, avatar_url, monthly_budget')
                     .eq('id', authUser.id)
-                    .single()
+                    .maybeSingle()
+
+                let profile = fetchResult
+
+                // [AUTO-HEAL] If profile doesn't exist (Targeting Mobile/Legacy Users), create it now.
+                if (!profile) {
+                    const { full_name, avatar_url, name } = authUser.user_metadata || {}
+                    const displayName = full_name || name || authUser.email?.split('@')[0] || 'User'
+
+                    const { data: newProfile } = await supabase
+                        .from('profiles')
+                        .upsert({
+                            id: authUser.id,
+                            email: authUser.email,
+                            full_name: displayName,
+                            avatar_url: avatar_url,
+                            updated_at: new Date().toISOString()
+                        })
+                        .select()
+                        .single()
+
+                    if (newProfile) profile = newProfile
+                }
+
+                // Redirect to onboarding if User has no budget set
+                if (!profile?.monthly_budget && profile?.monthly_budget !== 0) {
+                    window.location.href = '/onboarding'
+                    return
+                }
 
                 setUser({
                     name: profile?.full_name || 'User',
