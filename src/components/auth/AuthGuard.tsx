@@ -32,7 +32,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         const supabase = createClient()
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT' || !session) {
+                setIsAuthorized(false)
                 router.replace('/login')
+                router.refresh()
             }
         })
 

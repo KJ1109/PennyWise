@@ -7,10 +7,10 @@ export function createClient() {
         {
             cookieOptions: {
                 name: 'sb-pennywise-auth',
-                domain: '',
+                // domain: '', // Let browser handle domain
                 path: '/',
                 sameSite: 'lax',
-                secure: true,
+                secure: process.env.NODE_ENV === 'production',
             },
         }
     )
