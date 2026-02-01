@@ -28,7 +28,6 @@ export const viewport: Viewport = {
 };
 
 import { CapacitorAppListener } from "@/components/CapacitorAppListener";
-import { OfflineBanner } from "@/components/OfflineBanner";
 
 // ... (other imports)
 
@@ -51,7 +50,6 @@ export default function RootLayout({
         >
           <CapacitorAppListener />
           <ThemeSync />
-          <OfflineBanner />
           {children}
         </ThemeProvider>
       </body>

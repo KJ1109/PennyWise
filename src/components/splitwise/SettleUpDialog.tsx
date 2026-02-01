@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, X, ArrowRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 
 export function SettleUpDialog({ groupId, members, userId }: { groupId: string, members: any[], userId: string }) {
     const [isOpen, setIsOpen] = useState(false)
@@ -149,14 +148,11 @@ export function SettleUpDialog({ groupId, members, userId }: { groupId: string, 
         setLoading(false)
     }
 
-    const isOnline = useNetworkStatus()
-
     if (!isOpen) {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                disabled={!isOnline}
-                className="flex items-center gap-2 rounded-md bg-white border border-gray-200 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 rounded-md bg-white border border-gray-200 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
             >
                 Settle Up
             </button>
