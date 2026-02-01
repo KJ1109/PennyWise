@@ -11,19 +11,25 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const checkAuth = async () => {
-            const supabase = createClient()
+            try {
+                const supabase = createClient()
 
-            // Check current session
-            const { data: { session } } = await supabase.auth.getSession()
+                // Check current session
+                const { data: { session }, error } = await supabase.auth.getSession()
 
-            if (!session) {
+                if (error || !session) {
+                    throw new Error('No session')
+                }
+
+                // Optional: You could fetch profile here if needed globally
+                setIsAuthorized(true)
+            } catch (error) {
+                // If any error occurs (network, config, no session), redirect to login
+                setIsAuthorized(false)
                 router.replace('/login')
-                return
+            } finally {
+                setIsLoading(false)
             }
-
-            // Optional: You could fetch profile here if needed globally
-            setIsAuthorized(true)
-            setIsLoading(false)
         }
 
         checkAuth()
