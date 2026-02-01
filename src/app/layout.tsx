@@ -28,6 +28,7 @@ export const viewport: Viewport = {
 };
 
 import { CapacitorAppListener } from "@/components/CapacitorAppListener";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 
 // ... (other imports)
 
@@ -50,7 +51,9 @@ export default function RootLayout({
         >
           <CapacitorAppListener />
           <ThemeSync />
-          {children}
+          <AuthGuard>
+            {children}
+          </AuthGuard>
         </ThemeProvider>
       </body>
     </html>

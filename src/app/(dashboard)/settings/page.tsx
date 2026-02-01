@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { clearApplicationData } from '@/lib/reset-app-store'
 import { useTheme } from 'next-themes'
 import { LogOut, Moon, Sun, Monitor, User, Wallet, Check, Palette, Upload, Droplet } from 'lucide-react'
 import { formatCurrency } from '@/lib/budget'
@@ -156,14 +157,8 @@ export default function SettingsPage() {
     }
 
     const handleSignOut = async () => {
-        const supabase = createClient()
-        await supabase.auth.signOut()
-
-        localStorage.clear()
-        sessionStorage.clear()
         setTheme('dark')
-
-        window.location.href = '/login'
+        await clearApplicationData(false)
     }
 
     if (loading) return <div className="p-8 text-foreground animate-pulse">Loading settings...</div>
@@ -520,17 +515,15 @@ function DataManagementSection({ profileId }: { profileId?: string }) {
                 const { error } = await supabase.rpc('delete_own_user')
                 if (error) throw error
 
-                // Cleanup local state immediately
-                localStorage.clear()
-                sessionStorage.clear()
-
-                success = true
-                window.location.href = '/login'
+                // Strict cleanup (Kill session)
+                await clearApplicationData(false)
                 return
             }
 
             if (success) {
                 if (confirmAction.type === 'all' && confirmAction.dataType === 'all') {
+                    // Force clean slate for onboarding (Keep session active)
+                    await clearApplicationData(true)
                     window.location.href = '/onboarding'
                     return
                 }
