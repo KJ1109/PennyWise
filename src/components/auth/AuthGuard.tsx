@@ -23,12 +23,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
                 // Optional: You could fetch profile here if needed globally
                 setIsAuthorized(true)
+                setIsLoading(false)
             } catch (error) {
                 // If any error occurs (network, config, no session), redirect to login
+                // Don't set isLoading(false) - keep spinner visible until hard redirect completes
                 setIsAuthorized(false)
-                router.replace('/login')
-            } finally {
-                setIsLoading(false)
+                window.location.href = '/login'
             }
         }
 
@@ -39,8 +39,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT' || !session) {
                 setIsAuthorized(false)
-                router.replace('/login')
-                router.refresh()
+                window.location.href = '/login'
             }
         })
 
