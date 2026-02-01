@@ -1,23 +1,23 @@
+'use client'
+
 import { useState, useEffect } from 'react'
-import { Network } from '@capacitor/network'
 
 export function useNetworkStatus() {
-    // Default to true to avoid initial flash
-    const [isOnline, setIsOnline] = useState(true)
+    // Default to true to avoid initial flash, assuming typical connectivity
+    const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
 
     useEffect(() => {
-        // Initial check
-        Network.getStatus().then(status => {
-            setIsOnline(status.connected)
-        })
+        if (typeof window === 'undefined') return
 
-        // Listener
-        const handler = Network.addListener('networkStatusChange', status => {
-            setIsOnline(status.connected)
-        })
+        const handleOnline = () => setIsOnline(true)
+        const handleOffline = () => setIsOnline(false)
+
+        window.addEventListener('online', handleOnline)
+        window.addEventListener('offline', handleOffline)
 
         return () => {
-            handler.then(h => h.remove())
+            window.removeEventListener('online', handleOnline)
+            window.removeEventListener('offline', handleOffline)
         }
     }, [])
 

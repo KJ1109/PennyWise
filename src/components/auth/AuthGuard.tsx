@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Network } from '@capacitor/network'
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter()
@@ -15,16 +14,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
             const supabase = createClient()
 
             // Check current session
-            const { data: { session }, error } = await supabase.auth.getSession()
-            console.log('AuthGuard Check:', { session, error, online: navigator.onLine })
+            const { data: { session } } = await supabase.auth.getSession()
 
             if (!session) {
-                // Check REAL connection status before redirecting
-                const status = await Network.getStatus()
-                console.log('Network Status Check:', status)
-
-                if (status.connected) {
-                    console.log('Redirecting to login (Online + No Session)')
+                // If offline, assume session might be valid/cached and allow access to cached UI
+                if (navigator.onLine) {
                     router.replace('/login')
                 } else {
                     console.log('Offline: Allow access to cached pages despite potential session expiry')
@@ -43,12 +37,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
         // Set up listener for future auth changes (e.g. sign out from another tab/window)
         const supabase = createClient()
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             // Fix: Don't force logout if we are just offline and session refresh failed
             if (event === 'SIGNED_OUT' || !session) {
-                const status = await Network.getStatus()
-
-                if (status.connected) {
+                // If we are offline, we might still have useful cached data visible.
+                // Only redirect if we are ONLINE (implying a genuine logout/expiry).
+                if (navigator.onLine) {
                     router.replace('/login')
                 } else {
                     console.log('Offline: Supabase session invalid, but keeping UI for read-only mode.')
