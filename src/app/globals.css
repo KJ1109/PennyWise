@@ -1,297 +1,74 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
 
-@variant dark (&:where(.dark, .dark *));
-@variant pink (&:where(.pink, .pink *));
-@variant blue (&:where(.blue, .blue *));
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
 
-:root,
-.light {
-    /* Light Theme (Default - Blue) */
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    /* blue-600 */
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    /* slate-100 */
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: #ffffff;
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --radius: 0.625rem;
-    --sidebar-bg: #ffffff;
-    --sidebar-fg: #09090b;
-    --sidebar-active-bg: #eff6ff;
-    /* blue-50 */
-    --sidebar-active-fg: #2563eb;
-    /* blue-600 */
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-}
+        --popover: 0 0% 100%;
+        --popover-foreground: 222.2 84% 4.9%;
 
-/* Dark Theme */
-/* Dark Theme (True Black/Zinc) */
-.dark {
-    --background: #09090b;
-    /* Zinc 950 */
-    --foreground: #fafafa;
-    /* Zinc 50 */
-    --card: #09090b;
-    --card-foreground: #fafafa;
-    --popover: #09090b;
-    --popover-foreground: #fafafa;
-    --primary: #fafafa;
-    --primary-foreground: #18181b;
-    --secondary: #27272a;
-    /* Zinc 800 */
-    --secondary-foreground: #fafafa;
-    --muted: #27272a;
-    --muted-foreground: #a1a1aa;
-    /* Zinc 400 */
-    --accent: #27272a;
-    --accent-foreground: #fafafa;
-    --destructive: #ef4444;
-    --destructive-foreground: #fafafa;
-    --border: #27272a;
-    --input: #27272a;
-    --ring: #d4d4d8;
-    /* Zinc 300 */
-    --sidebar-bg: #000000;
-    --sidebar-fg: #fafafa;
-    --sidebar-active-bg: #27272a;
-    --sidebar-active-fg: #ffffff;
-    --chart-1: #ffffff;
-    --chart-2: #a1a1aa;
-    --chart-3: #52525b;
-    --chart-4: #27272a;
-    --chart-5: #ffffff;
-    --sidebar: #09090b;
-    --sidebar-foreground: #fafafa;
-    --sidebar-primary: #fafafa;
-    --sidebar-primary-foreground: #09090b;
-    --sidebar-accent: #27272a;
-    --sidebar-accent-foreground: #fafafa;
-    --sidebar-border: #27272a;
-    --sidebar-ring: #d4d4d8;
-}
+        --primary: 222.2 47.4% 11.2%;
+        --primary-foreground: 210 40% 98%;
 
-/* Dark Theme Card Gradients */
-.dark .bg-card,
-.dark .bg-white {
-    background-color: #09090b;
-    background-image: linear-gradient(145deg, #18181b 0%, #09090b 100%);
-    border-color: #27272a;
-}
+        --secondary: 210 40% 96.1%;
+        --secondary-foreground: 222.2 47.4% 11.2%;
 
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215.4 16.3% 46.9%;
 
-/* Pink Theme */
-.pink {
-    --background: #F7A1C4;
-    /* Fallback Base */
-    --foreground: #2B1B2A;
+        --accent: 210 40% 96.1%;
+        --accent-foreground: 222.2 47.4% 11.2%;
 
-    --card: #FFFFFF;
-    --card-foreground: #2B1B2A;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
 
-    --popover: #FFFFFF;
-    --popover-foreground: #2B1B2A;
-    /* Fuchsia Main */
-    --primary: #EF2B7C;
-    --primary-foreground: #FFFFFF;
+        --border: 214.3 31.8% 91.4%;
+        --input: 214.3 31.8% 91.4%;
+        --ring: 222.2 84% 4.9%;
 
-    /* Hot Pink Secondary */
-    --secondary: #FF69B4;
-    --secondary-foreground: #FFFFFF;
+        --radius: 0.5rem;
+    }
 
-    --muted: #FFF0F5;
-    --muted-foreground: #EF2B7C;
+    .dark {
+        --background: 222.2 84% 4.9%;
+        --foreground: 210 40% 98%;
 
-    --accent: #FDF2F8;
-    --accent-foreground: #2B1B2A;
+        --card: 222.2 84% 4.9%;
+        --card-foreground: 210 40% 98%;
 
-    --destructive: #EF2B7C;
-    --destructive-foreground: #FFFFFF;
+        --popover: 222.2 84% 4.9%;
+        --popover-foreground: 210 40% 98%;
 
-    --border: #F7A1C4;
-    --input: #F7A1C4;
-    --ring: #FF69B4;
+        --primary: 210 40% 98%;
+        --primary-foreground: 222.2 47.4% 11.2%;
 
-    /* Sidebar: Fuchsia */
-    --sidebar-bg: #EF2B7C;
-    --sidebar-fg: #FFFFFF;
-    --sidebar-active-bg: #FFFFFF;
-    /* White active to pop against pink? Or darker pink? User liked active pink fg before. Let's make active bg #FF69B4? Or White. */
-    --sidebar-active-fg: #EF2B7C;
-    --sidebar-border: #FF69B4;
-    --sidebar-ring: #F7A1C4;
+        --secondary: 217.2 32.6% 17.5%;
+        --secondary-foreground: 210 40% 98%;
 
-    --chart-4: #2B1B2A;
-    --chart-5: #EF2B7C;
-}
+        --muted: 217.2 32.6% 17.5%;
+        --muted-foreground: 215 20.2% 65.1%;
 
-/* Page Background: Shiny Glow Radial Gradient */
-.pink body {
-    /* Radial Starburst: Baby Pink Glow (Top Right) -> Hot Pink -> Fuchsia (Bottom Left) */
-    background-image: radial-gradient(circle at 100% 0%, #F7A1C4 0%, #FF69B4 50%, #EF2B7C 100%);
-    background-attachment: fixed;
-}
+        --accent: 217.2 32.6% 17.5%;
+        --accent-foreground: 210 40% 98%;
 
-/* Cards: Crisp White */
-.pink .bg-card,
-.pink .bg-white {
-    background-image: none;
-    background-color: #FFFFFF;
-    border-color: #F7A1C4;
-    color: #2B1B2A;
-}
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 210 40% 98%;
 
-/* Blue Theme (Prussian Blue / Sapphire) */
-.blue {
-    --background: #000926;
-    /* Prussian Blue */
-    --foreground: #ffffff;
-    /* White text */
-
-    --card: #000926;
-    --card-foreground: #ffffff;
-
-    --popover: #000926;
-    --popover-foreground: #ffffff;
-
-    --primary: #0F52BA;
-    /* Sapphire */
-    --primary-foreground: #ffffff;
-
-    --secondary: #A6C5D7;
-    /* Pale Sky (Light Blue) */
-    --secondary-foreground: #000926;
-    /* Dark Text */
-
-    --muted: #02143d;
-    /* Slightly lighter Prussian */
-    --muted-foreground: #A6C5D7;
-    /* Pale Sky text */
-
-    --accent: #A6C5D7;
-    /* Pale Sky */
-    --accent-foreground: #000926;
-    /* Dark Text */
-
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
-
-    --border: #1e3a8a;
-    /* Dark Blue Border */
-    --input: #1e3a8a;
-    --ring: #0F52BA;
-
-    /* Sidebar: Prussian Blue */
-    --sidebar-bg: #000926;
-    --sidebar-fg: #ffffff;
-    --sidebar-active-bg: #0F52BA;
-    /* Sapphire */
-    --sidebar-active-fg: #ffffff;
-    --sidebar-border: #1e3a8a;
-    --sidebar-ring: #0F52BA;
-
-    --chart-1: #0F52BA;
-    /* Sapphire */
-    --chart-2: #A6C5D7;
-    /* Pale Sky */
-    --chart-3: #D6E6F3;
-    /* Alice Blue */
-    --chart-4: #60a5fa;
-    /* Blue 400 */
-    --chart-5: #ffffff;
-}
-
-/* Blue Theme Gradients */
-.blue .bg-card,
-.blue .bg-white {
-    background-color: #000926;
-    background-image: linear-gradient(145deg, #02143d 0%, #000926 100%);
-    border-color: #1e3a8a;
-}
-
-@theme {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-destructive: var(--destructive);
-    --color-destructive-foreground: var(--destructive-foreground);
-    --color-border: var(--border);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-    --radius-radius: var(--radius);
-    --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
-
-    /* Custom Semantic Colors */
-    --color-sidebar: var(--sidebar-bg);
-    --color-sidebar-foreground: var(--sidebar-fg);
-    --color-sidebar-active: var(--sidebar-active-bg);
-    --color-sidebar-active-foreground: var(--sidebar-active-fg);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
-    --radius-2xl: calc(var(--radius) + 8px);
-    --radius-3xl: calc(var(--radius) + 12px);
-    --radius-4xl: calc(var(--radius) + 16px);
-}
-
-body {
-    background-color: var(--background);
-    transition: background-color 0.3s ease, color 0.3s ease;
+        --border: 217.2 32.6% 17.5%;
+        --input: 217.2 32.6% 17.5%;
+        --ring: 212.7 26.8% 83.9%;
+    }
 }
 
 @layer base {
     * {
-        @apply border-border outline-ring/50;
+        @apply border-border;
     }
 
     body {
