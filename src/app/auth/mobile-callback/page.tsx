@@ -1,55 +1,42 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function MobileCallback() {
-    const searchParams = useSearchParams()
-    const router = useRouter()
-
     useEffect(() => {
-        // This page acts as a bridge. It receives the OAuth code/token from the provider
-        // and immediately redirects back to the Mobile App using the Custom Scheme.
+        // This page is a BRIDGE.
+        // It receives the Auth Callback from Supabase (on HTTPS)
+        // And immediately throws it over the wall to the Native App (Custom Scheme)
 
-        const params = new URLSearchParams(searchParams.toString())
-        const code = params.get('code')
-        const error = params.get('error')
+        // We must forward BOTH the 'search' (?code=...) and 'hash' (#access_token=...)
+        // to ensure we cover both PKCE and Implicit flows.
+        const search = window.location.search
         const hash = window.location.hash
 
-        // Construct the Deep Link URL
-        // Scheme: com.pennywise.app://
-        // Path: google-auth
-        // Params: Forward everything
-
-        let deepLink = `com.pennywise.app://google-auth?${params.toString()}`
-        if (hash) {
-            deepLink += hash
-        }
-
-        console.log('Redirecting to Deep Link:', deepLink)
-
-        // Force redirect to the app
-        window.location.href = deepLink
-
-        // Fallback: If app doesn't open (e.g. user is on desktop testing this route),
-        // show a message or redirect to home.
-        const timer = setTimeout(() => {
-            // Optional: Redirect to home or show "Open in App" button
-        }, 3000)
-
-        return () => clearTimeout(timer)
-    }, [searchParams])
+        // Redirect to the App
+        // The Mobile App will handle the Session Exchange internally or via deep link listener.
+        // Note: New User triggering might fail here if the Mobile App doesn't call an endpoint to create profile.
+        // HACK: We can't easily upsert profile here because we don't have the Session Cookie (it's in the hash/code).
+        // The Mobile App must handle "Onboarding" redirection itself.
+        window.location.href = `com.pennywise.app://auth${search}${hash}`
+    }, [])
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-black text-white p-4 text-center">
-            <h1 className="text-xl font-bold mb-4">Redirecting to PennyWise...</h1>
-            <p className="text-gray-400 text-sm">
-                If the app doesn't open automatically, <a href="#" onClick={(e) => {
-                    e.preventDefault()
-                    const params = new URLSearchParams(window.location.search)
-                    window.location.href = `com.pennywise.app://google-auth?${params.toString()}${window.location.hash}`
-                }} className="text-[#00C896] underline">click here</a>.
-            </p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+            <p className="text-sm text-gray-400">Finalizing login...</p>
+            <p className="text-xs text-gray-600 mt-2">Opening App...</p>
+
+            <button
+                onClick={() => {
+                    const search = window.location.search
+                    const hash = window.location.hash
+                    window.location.href = `com.pennywise.app://auth${search}${hash}`
+                }}
+                className="mt-8 rounded-full bg-white/10 px-6 py-2 text-sm font-medium text-white hover:bg-white/20"
+            >
+                Click here if App doesn't open
+            </button>
         </div>
     )
 }

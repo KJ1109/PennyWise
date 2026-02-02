@@ -32,8 +32,8 @@ export default function Onboarding() {
             console.error('Error saving profile:', error)
             alert('Error saving profile!')
         } else {
-            router.push('/')
-            router.refresh()
+            // Strict State Reset
+            window.location.href = '/'
         }
         setLoading(false)
     }

@@ -13,7 +13,7 @@ interface BudgetOverviewProps {
 }
 
 function MiniCircle({ label, budget, spent, color }: { label: string, budget: number, spent: number, color: string }) {
-    const percentage = Math.min((spent / budget) * 100, 100)
+    const percentage = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0
     const remaining = Math.max(budget - spent, 0)
 
     return (

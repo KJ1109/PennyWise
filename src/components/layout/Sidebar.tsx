@@ -22,6 +22,8 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
+import { clearApplicationData } from '@/lib/reset-app-store'
+
 interface SidebarProps {
     user: {
         name: string
@@ -39,15 +41,7 @@ export function Sidebar({ user }: SidebarProps) {
 
     const handleSignOut = async () => {
         setTheme('dark')
-        // Clear all local state to prevent APK persistence issues
-        localStorage.clear()
-        sessionStorage.clear()
-
-        const supabase = createClient()
-        await supabase.auth.signOut()
-
-        // Force hard redirect to clear memory state
-        window.location.href = '/login'
+        await clearApplicationData(false)
     }
 
     return (

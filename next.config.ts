@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    // output: 'export', // Disabled to allow Dynamic Server Routes (SSR) for Auth
-    images: {
-        unoptimized: true
-    },
+  output: 'export', // Enabled for Capacitor (Mobile) Static Build
+  images: {
+    unoptimized: true
+  },
 
 };
 
