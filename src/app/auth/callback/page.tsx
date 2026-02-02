@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { Loader2 } from 'lucide-react'
@@ -10,12 +10,17 @@ export default function AuthCallback() {
     const searchParams = useSearchParams()
     const [error, setError] = useState<string | null>(null)
 
+    const hasRun = useRef(false)
+
     useEffect(() => {
         const handleCallback = async () => {
             const code = searchParams.get('code')
             const next = searchParams.get('next') ?? '/'
 
             if (code) {
+                if (hasRun.current) return
+                hasRun.current = true
+
                 const supabase = createSupabaseBrowser()
                 const { error: sessionError, data: { user } } = await supabase.auth.exchangeCodeForSession(code)
 
