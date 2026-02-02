@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createSupabaseBrowser } from '@/lib/supabase/client'
 
 // Strict Global Gatekeeper
 import { usePathname } from 'next/navigation'
@@ -24,7 +24,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
                     return
                 }
 
-                const supabase = createClient()
+                const supabase = createSupabaseBrowser()
 
                 // --- PHASE 1: AUTHENTICATION ---
                 const { data: { session }, error } = await supabase.auth.getSession()
@@ -89,7 +89,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
         runStrictGuard()
 
-        const supabase = createClient()
+        const supabase = createSupabaseBrowser()
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT' || !session) {
                 // Allow public routes to handle themselves or redirect

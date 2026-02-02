@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Capacitor } from '@capacitor/core'
 import { Loader2, ArrowRight, CheckCircle2, XCircle, ShieldCheck, Eye, EyeOff } from 'lucide-react'
@@ -35,7 +35,7 @@ export function AuthForm() {
 
         const timer = setTimeout(async () => {
             setIsUsernameChecking(true)
-            const supabase = createClient()
+            const supabase = createSupabaseBrowser()
 
             const { data } = await supabase
                 .from('profiles')
@@ -57,7 +57,7 @@ export function AuthForm() {
     }, [password, confirmPassword, mode])
 
     const handleGoogleLogin = async () => {
-        const supabase = createClient()
+        const supabase = createSupabaseBrowser()
 
         const getRedirectUrl = () => {
             if (Capacitor.isNativePlatform()) {
@@ -82,7 +82,7 @@ export function AuthForm() {
         setSuccessMessage(null)
         setLoading(true)
 
-        const supabase = createClient()
+        const supabase = createSupabaseBrowser()
 
         try {
             if (mode === 'login') {

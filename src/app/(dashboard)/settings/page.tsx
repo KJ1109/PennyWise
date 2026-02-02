@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { clearApplicationData } from '@/lib/reset-app-store'
 import { useTheme } from 'next-themes'
 import { LogOut, Moon, Sun, Monitor, User, Wallet, Check, Palette, Upload, Droplet } from 'lucide-react'
@@ -58,7 +58,7 @@ export default function SettingsPage() {
             const fileName = `${profile?.id}-${Math.random()}.${fileExt}`
             const filePath = `${fileName}`
 
-            const supabase = createClient()
+            const supabase = createSupabaseBrowser()
 
             // Upload to 'avatars' bucket
             const { error: uploadError } = await supabase.storage
@@ -89,7 +89,7 @@ export default function SettingsPage() {
 
     useEffect(() => {
         async function fetchProfile() {
-            const supabase = createClient()
+            const supabase = createSupabaseBrowser()
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) {
                 router.replace('/login')
@@ -114,7 +114,7 @@ export default function SettingsPage() {
         e.preventDefault()
         setSaving(true)
         const formData = new FormData(e.currentTarget)
-        const supabase = createClient()
+        const supabase = createSupabaseBrowser()
 
         const fullName = formData.get('fullName') as string
         const monthlyBudget = Number(formData.get('monthlyBudget'))
@@ -149,7 +149,7 @@ export default function SettingsPage() {
         setTheme(newTheme) // Client side immediate
         if (!profile?.id) return
 
-        const supabase = createClient()
+        const supabase = createSupabaseBrowser()
         await supabase
             .from('profiles')
             .update({ theme: newTheme })
@@ -157,7 +157,8 @@ export default function SettingsPage() {
     }
 
     const handleSignOut = async () => {
-        setTheme('dark')
+        const supabase = createSupabaseBrowser()
+        await supabase.auth.signOut()
         await clearApplicationData(false)
     }
 
@@ -455,7 +456,7 @@ function DataManagementSection({ profileId }: { profileId?: string }) {
         if (!confirmAction || !profileId) return
 
         setIsLoading(true)
-        const supabase = createClient()
+        const supabase = createSupabaseBrowser()
         let success = false
         let errorMsg = ''
 

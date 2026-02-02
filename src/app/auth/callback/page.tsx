@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { Loader2 } from 'lucide-react'
 
 export default function AuthCallback() {
@@ -16,7 +16,7 @@ export default function AuthCallback() {
             const next = searchParams.get('next') ?? '/'
 
             if (code) {
-                const supabase = createClient()
+                const supabase = createSupabaseBrowser()
                 const { error: sessionError, data: { user } } = await supabase.auth.exchangeCodeForSession(code)
 
                 if (sessionError) {

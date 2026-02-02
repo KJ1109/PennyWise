@@ -24,8 +24,8 @@ export function CapacitorAppListener() {
                     }
                     // Case 2: Custom Scheme (com.pennywise.app://auth?code=...)
                     else if (url.protocol === 'com.pennywise.app:') {
-                        const { createClient } = await import('@/lib/supabase/client')
-                        const supabase = createClient()
+                        const { createSupabaseBrowser } = await import('@/lib/supabase/client')
+                        const supabase = createSupabaseBrowser()
 
                         // Parse Code
                         const params = new URLSearchParams(url.search)

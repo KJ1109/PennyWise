@@ -8,7 +8,7 @@ import { useTheme } from 'next-themes'
 
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Wallet, LogOut } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { createSupabaseBrowser } from '@/lib/supabase/client'
 
 import {
     AlertDialog,
