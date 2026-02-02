@@ -9,7 +9,6 @@ import { createClient } from '@/lib/supabase/client'
  * 2. LocalStorage (All keys)
  * 3. SessionStorage (All keys)
  * 4. Document Cookies (Aggressive wipe)
- * 5. Capacitor WebView Cache (Indirectly via href reload)
  */
 export async function clearApplicationData(keepSession = false) {
     console.log('[AppReset] Starting cleanup...', { keepSession })
@@ -25,7 +24,6 @@ export async function clearApplicationData(keepSession = false) {
     }
 
     // 2. Clear Browser Storage
-    // This is critical for Capacitor WebView which persists localStorage
     localStorage.clear()
     sessionStorage.clear()
 

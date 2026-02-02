@@ -26,7 +26,7 @@ export default function DashboardLayout({
                 // Fetch basic profile + budget
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('full_name, avatar_url')
+                    .select('full_name, avatar_url, monthly_budget')
                     .eq('id', authUser.id)
                     .maybeSingle()
 

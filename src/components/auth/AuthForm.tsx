@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Capacitor } from '@capacitor/core'
 import { Loader2, ArrowRight, CheckCircle2, XCircle, ShieldCheck, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -60,10 +59,6 @@ export function AuthForm() {
         const supabase = createSupabaseBrowser()
 
         const getRedirectUrl = () => {
-            if (Capacitor.isNativePlatform()) {
-                // Mobile: Redirect to client-side bridge page
-                return 'https://penny-wise-finance.vercel.app/auth/mobile-callback'
-            }
             // Web: Redirect to Server-Side Route for Cookie Exchange
             return `${window.location.origin}/auth/callback`
         }

@@ -1,7 +1,7 @@
 'use client'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Loader2, ArrowRight } from 'lucide-react'
 
 export default function Onboarding() {
@@ -10,6 +10,30 @@ export default function Onboarding() {
     const [fullName, setFullName] = useState('')
     const [monthlyBudget, setMonthlyBudget] = useState('')
     const [loading, setLoading] = useState(false)
+    const [verifying, setVerifying] = useState(true)
+
+    // [Fix] Reverse Guard: If profile is valid, force Dashboard
+    useEffect(() => {
+        const checkProfile = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('monthly_budget')
+                    .eq('id', user.id)
+                    .maybeSingle()
+
+                if (profile?.monthly_budget) {
+                    window.location.replace('/')
+                    return
+                }
+            }
+            setVerifying(false)
+        }
+        checkProfile()
+    }, [])
+
+    if (verifying) return <div className="flex h-screen items-center justify-center bg-black text-white">Loading...</div>
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()

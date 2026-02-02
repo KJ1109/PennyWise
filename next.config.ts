@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export', // Enabled for Capacitor (Mobile) Static Build
+  // output: 'export', // Removed for Web-Only Vercel Optimization
   images: {
     unoptimized: true
   },

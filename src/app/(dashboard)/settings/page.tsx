@@ -523,8 +523,24 @@ function DataManagementSection({ profileId }: { profileId?: string }) {
 
             if (success) {
                 if (confirmAction.type === 'all' && confirmAction.dataType === 'all') {
-                    // Force clean slate for onboarding (Keep session active)
+                    // Verify Update
+                    const { data: verifyProfile } = await supabase
+                        .from('profiles')
+                        .select('monthly_budget')
+                        .eq('id', profileId)
+                        .single()
+
+                    if (verifyProfile?.monthly_budget !== null) {
+                        throw new Error('Reset failed. Database value did not update. Please try again.')
+                    }
+
+                    // CRITICAL: Clear client auth cache to prevent stale state
+                    await supabase.auth.refreshSession()
+
+                    // Force clean slate
                     await clearApplicationData(true)
+
+                    // Force rigorous reload (User suggestion: href is best for destroying in-memory state)
                     window.location.href = '/onboarding'
                     return
                 }

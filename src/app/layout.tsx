@@ -27,7 +27,6 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-import { CapacitorAppListener } from "@/components/CapacitorAppListener";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 
 // ... (other imports)
@@ -49,7 +48,6 @@ export default function RootLayout({
           disableTransitionOnChange
           themes={['light', 'dark', 'pink', 'blue']}
         >
-          <CapacitorAppListener />
           <ThemeSync />
           <AuthGuard>
             {children}
