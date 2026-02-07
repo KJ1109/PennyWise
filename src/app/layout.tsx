@@ -27,7 +27,7 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-import { AuthGuard } from "@/components/auth/AuthGuard";
+
 
 // ... (other imports)
 
@@ -49,9 +49,7 @@ export default function RootLayout({
           themes={['light', 'dark', 'pink', 'blue']}
         >
           <ThemeSync />
-          <AuthGuard>
-            {children}
-          </AuthGuard>
+          {children}
         </ThemeProvider>
       </body>
     </html>

@@ -1,48 +1,41 @@
-'use client'
-
 import { AppShell } from '@/components/layout/AppShell'
-import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    const [user, setUser] = useState<{
-        name: string
-        email: string
-        avatarUrl?: string
-    } | null>(null)
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    useEffect(() => {
-        async function fetchProfile() {
-            const supabase = createClient()
-            const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!user) {
+        redirect('/login')
+    }
 
-            if (authUser) {
+    // Fetch basic profile + budget
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url, monthly_budget')
+        .eq('id', user.id)
+        .maybeSingle()
 
-                // Fetch basic profile + budget
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('full_name, avatar_url, monthly_budget')
-                    .eq('id', authUser.id)
-                    .maybeSingle()
+    // Onboarding Check: If no budget is set, force them to onboarding.
+    if (!profile?.monthly_budget || profile.monthly_budget <= 0) {
+        redirect('/onboarding')
+    }
 
-                // Presentation Only: Set user state for sidebar/header
-                setUser({
-                    name: profile?.full_name || 'User',
-                    email: authUser.email || '',
-                    avatarUrl: profile?.avatar_url
-                })
-            }
-        }
-        fetchProfile()
-    }, [])
+    const userData = {
+        name: profile?.full_name || 'User',
+        email: user.email || '',
+        avatarUrl: profile?.avatar_url
+    }
 
     return (
-        <AppShell user={user || { name: '...', email: '...' }}>
+        <AppShell user={userData}>
             {children}
         </AppShell>
     )

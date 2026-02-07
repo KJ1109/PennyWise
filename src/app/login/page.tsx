@@ -1,7 +1,9 @@
-'use client'
+
 
 import { AuthForm } from '@/components/auth/AuthForm'
 import GradientBlinds from '@/components/ui/GradientBlinds'
+
+export const dynamic = 'force-static'
 
 export default function LoginPage() {
     return (

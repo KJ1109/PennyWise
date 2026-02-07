@@ -1,75 +1,50 @@
 'use client'
 
-import { Search, MapPin } from 'lucide-react'
+import { Search, Loader2 } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useTransition } from 'react'
 
-interface SearchInputProps {
-    value: string
-    onChange: (val: string) => void
-    category: string
-    onCategoryChange: (val: string) => void
-    pincode: string
-    onPincodeChange: (val: string) => void
-    onSearch: () => void
-    loading: boolean
-}
+export function SearchInput({ initialQuery = '', initialPincode = '' }: { initialQuery?: string, initialPincode?: string }) {
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const [query, setQuery] = useState(initialQuery)
+    const [pincode, setPincode] = useState(initialPincode)
+    const [isPending, startTransition] = useTransition()
 
-const CATEGORIES = ['All', 'Electronics', 'Stationery', 'Fashion', 'Beauty', 'Groceries']
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!query.trim()) return
 
-export function SearchInput({
-    value, onChange,
-    category, onCategoryChange,
-    pincode, onPincodeChange,
-    onSearch, loading
-}: SearchInputProps) {
+        startTransition(() => {
+            const params = new URLSearchParams(searchParams)
+            params.set('q', query)
+            if (pincode) params.set('pincode', pincode)
+            else params.delete('pincode')
+            router.replace(`/products?${params.toString()}`)
+        })
+    }
+
     return (
-        <div className="mb-8 w-full max-w-3xl space-y-4">
-            <div className="flex flex-col gap-2 sm:flex-row">
-                {/* Category Select */}
-                <select
-                    value={category}
-                    onChange={(e) => onCategoryChange(e.target.value)}
-                    className="h-12 rounded-lg border border-gray-300 bg-white px-4 text-sm focus:border-blue-500 focus:outline-none"
-                >
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-
-                {/* Pincode Input */}
-                <div className="relative w-32 shrink-0">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <MapPin className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <input
-                        type="text"
-                        value={pincode}
-                        onChange={(e) => onPincodeChange(e.target.value)}
-                        className="h-12 w-full rounded-lg border border-gray-300 pl-9 pr-2 text-sm focus:border-blue-500 focus:outline-none"
-                        placeholder="Pincode"
-                        maxLength={6}
-                    />
-                </div>
-
-                {/* Main Search */}
-                <div className="relative flex-1">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <Search className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                        type="text"
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && onSearch()}
-                        className="h-12 w-full rounded-lg border border-gray-300 pl-10 pr-24 text-sm focus:border-blue-500 focus:outline-none"
-                        placeholder="Search products..."
-                    />
-                    <button
-                        onClick={onSearch}
-                        disabled={loading}
-                        className="absolute bottom-1 right-1 top-1 rounded-md bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-                    >
-                        {loading ? 'Searching...' : 'Search'}
-                    </button>
-                </div>
-            </div>
-        </div>
+        <form onSubmit={handleSearch} className="w-full max-w-2xl mb-8 relative">
+            <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search for products..."
+                className="w-full rounded-full border border-input bg-card py-4 pl-12 pr-4 text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
+            />
+            <input
+                placeholder="Pincode"
+                className="absolute right-16 top-1/2 -translate-y-1/2 w-24 rounded-full border border-input bg-muted py-2 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+            />
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <button
+                type="submit"
+                disabled={isPending}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-blue-600 p-2 text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+                {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
+            </button>
+        </form>
     )
 }

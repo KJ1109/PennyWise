@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Users, Plus, X } from 'lucide-react'
 
-export function CreateGroupDialog({ userId, onGroupCreated }: { userId: string, onGroupCreated: (group: any) => void }) {
+export function CreateGroupDialog({ userId, onGroupCreated }: { userId: string, onGroupCreated?: (group: any) => void }) {
     const [isOpen, setIsOpen] = useState(false)
     const [name, setName] = useState('')
     const [loading, setLoading] = useState(false)
@@ -40,7 +40,11 @@ export function CreateGroupDialog({ userId, onGroupCreated }: { userId: string, 
         } else {
             setName('')
             setIsOpen(false)
-            onGroupCreated(group)
+            if (onGroupCreated) {
+                onGroupCreated(group)
+            } else {
+                router.refresh()
+            }
             // Optional: navigate to the new group
             router.push(`/splitwise/group?id=${group.id}`)
         }

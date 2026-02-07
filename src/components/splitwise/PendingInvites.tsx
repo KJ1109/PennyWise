@@ -5,12 +5,15 @@ import { Check, X, Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 
+import { useRouter } from 'next/navigation'
+
 interface PendingInvitesProps {
     invites: any[]
-    onRespond: () => void
+    onRespond?: () => void
 }
 
 export function PendingInvites({ invites, onRespond }: PendingInvitesProps) {
+    const router = useRouter()
     const [processing, setProcessing] = useState<string | null>(null)
 
     if (invites.length === 0) return null
@@ -48,7 +51,11 @@ export function PendingInvites({ invites, onRespond }: PendingInvitesProps) {
                 // Reject
                 await supabase.from('group_invites').update({ status: 'rejected' }).eq('id', inviteId)
             }
-            onRespond()
+            if (onRespond) {
+                onRespond()
+            } else {
+                router.refresh()
+            }
         } catch (error: any) {
             alert('Error processing invite: ' + error.message)
         }
