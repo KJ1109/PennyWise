@@ -18,7 +18,10 @@ export function GroupList({ groups }: { groups: Group[] }) {
     }
 
     return (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            style={{ contentVisibility: 'auto', contain: 'layout paint' } as React.CSSProperties}
+        >
             {groups.map((group) => (
                 <Link
                     key={group.id}

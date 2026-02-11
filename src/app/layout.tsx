@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSync } from "@/components/ThemeSync";
+import { CapacitorAuthListener } from '@/components/auth/CapacitorAuthListener'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +42,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+
+        // ... (inside default function RootLayout)
+
         <ThemeProvider
           attribute="class"
           defaultTheme="dark" // Default to dark mode
@@ -49,6 +53,7 @@ export default function RootLayout({
           themes={['light', 'dark', 'pink', 'blue']}
         >
           <ThemeSync />
+          <CapacitorAuthListener />
           {children}
         </ThemeProvider>
       </body>

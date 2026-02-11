@@ -22,6 +22,7 @@ export function ProductCard({ product, isCheapest }: { product: Product, isCheap
                     alt={product.title}
                     className="h-full w-full object-contain"
                     loading="lazy"
+                    decoding="async"
                 />
             </div>
 

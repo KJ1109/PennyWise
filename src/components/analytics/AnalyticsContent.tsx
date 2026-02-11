@@ -1,9 +1,13 @@
 'use client'
 
 import { BudgetOverview } from '@/components/analytics/BudgetOverview'
-import { CategoryAnalytics } from '@/components/analytics/CategoryAnalytics'
-import { YearlyExpensesBarChart } from '@/components/analytics/YearlyExpensesBarChart'
-import { AdvancedAnalytics } from '@/components/analytics/AdvancedAnalytics'
+import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
+
+const ChartsIsland = dynamic(() => import('@/components/analytics/ChartsIsland').then(mod => mod.ChartsIsland), {
+    ssr: false, // Charts are client-heavy, skipping SSR for them can speed up initial HTML delivery if they are heavy to render
+    loading: () => <div className="h-[350px] w-full animate-pulse rounded-3xl bg-muted/50" />
+})
 
 interface AnalyticsContentProps {
     monthlyBudget: number
@@ -22,7 +26,7 @@ export function AnalyticsContent({
 }: AnalyticsContentProps) {
     return (
         <div className="grid grid-cols-12 gap-6">
-            {/* Row 1 */}
+            {/* Row 1: Budget Overview (Critical Path) */}
             <div className="col-span-12 lg:col-span-5 h-auto md:h-[350px]">
                 <BudgetOverview
                     monthlyBudget={monthlyBudget}
@@ -31,17 +35,11 @@ export function AnalyticsContent({
                     spentToday={spentToday}
                 />
             </div>
-            <div className="col-span-12 lg:col-span-7 h-auto md:h-[350px]">
-                <YearlyExpensesBarChart expenses={allExpenses} monthlyBudget={monthlyBudget} />
-            </div>
 
-            {/* Row 2 */}
-            <div className="col-span-12 lg:col-span-8 h-auto md:h-[550px]">
-                <CategoryAnalytics expenses={allExpenses} />
-            </div>
-            <div className="col-span-12 lg:col-span-4 h-auto md:h-[550px]">
-                <AdvancedAnalytics expenses={allExpenses} monthlyBudget={monthlyBudget} />
-            </div>
+            {/* Heavy Charts Isolated */}
+            <Suspense fallback={<div className="col-span-12 lg:col-span-7 h-[350px] w-full animate-pulse rounded-3xl bg-muted/50" />}>
+                <ChartsIsland allExpenses={allExpenses} monthlyBudget={monthlyBudget} />
+            </Suspense>
         </div>
     )
 }

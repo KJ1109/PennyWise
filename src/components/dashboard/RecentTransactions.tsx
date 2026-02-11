@@ -60,7 +60,10 @@ export function RecentTransactions({ transactions }: { transactions: Transaction
             </button>
 
             {isOpen && (
-                <div className="flex flex-col gap-3 animate-in slide-in-from-top-2 duration-200">
+                <div
+                    className="flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200"
+                    style={{ contentVisibility: 'auto', contain: 'layout paint' } as React.CSSProperties}
+                >
                     {recentTransactions.map((t) => (
                         <div key={t.id} className="rounded-xl border bg-white p-4 shadow-sm dark:bg-gray-900 dark:border-gray-800 flex items-center justify-between group">
                             <div className="flex items-center gap-4">

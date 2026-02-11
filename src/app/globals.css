@@ -287,6 +287,13 @@
 body {
     background-color: var(--background);
     transition: background-color 0.3s ease, color 0.3s ease;
+    overscroll-behavior-y: none;
+    overscroll-behavior-x: none;
+}
+
+html {
+    overscroll-behavior-y: none;
+    overscroll-behavior-x: none;
 }
 
 @layer base {

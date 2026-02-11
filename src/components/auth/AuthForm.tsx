@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { Loader2, ArrowRight, CheckCircle2, XCircle, ShieldCheck, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+import { Capacitor } from '@capacitor/core'
+
 export function AuthForm() {
     const router = useRouter()
     const [mode, setMode] = useState<'login' | 'register' | 'forgot_password'>('login')
@@ -59,8 +61,18 @@ export function AuthForm() {
         const supabase = createSupabaseBrowser()
 
         const getRedirectUrl = () => {
+            const isNative = Capacitor.isNativePlatform()
+            console.log("Is native:", isNative)
+
+            if (isNative) {
+                const url = 'pennywise://auth-callback'
+                console.log("RedirectTo:", url)
+                return url
+            }
             // Web: Redirect to Server-Side Route for Cookie Exchange
-            return `${window.location.origin}/auth/callback`
+            const url = `${window.location.origin}/auth/callback`
+            console.log("RedirectTo:", url)
+            return url
         }
 
         await supabase.auth.signInWithOAuth({
