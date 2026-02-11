@@ -179,7 +179,7 @@ export function AddGroupExpense({ groupId, members, userId }: { groupId: string,
             setIsOpen(false)
             setSplitValues({})
             setPayerId(userId)
-            window.location.reload()
+            router.refresh()
         }
         setLoading(false)
     }

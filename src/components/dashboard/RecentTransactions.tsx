@@ -31,7 +31,7 @@ export function RecentTransactions({ transactions }: { transactions: Transaction
             if (error) {
                 alert('Failed to delete expense: ' + error.message)
             } else {
-                window.location.reload()
+                router.refresh()
             }
         }
     }

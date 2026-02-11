@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Plus, Trash2, Mountain, Car, Home, Gamepad2, Plane, Gift, ShoppingBag, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/budget'
+import { useRouter } from 'next/navigation'
 
 const GOAL_ICONS: Record<string, any> = {
     vacation: Plane,
@@ -17,13 +18,13 @@ const GOAL_ICONS: Record<string, any> = {
     shopping: ShoppingBag,
     other: Mountain
 }
-
 export function SavingsGoals({ initialGoals }: { initialGoals: any[] }) {
     const [goals, setGoals] = useState(initialGoals)
     const [isOpen, setIsOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [topUpGoal, setTopUpGoal] = useState<any>(null)
     const [editingGoal, setEditingGoal] = useState<any>(null)
+    const router = useRouter()
 
     useEffect(() => {
         setGoals(initialGoals)
@@ -58,6 +59,7 @@ export function SavingsGoals({ initialGoals }: { initialGoals: any[] }) {
         } else if (data) {
             setGoals(prev => [data, ...prev])
             setIsOpen(false)
+            router.refresh() // Refresh Server Data
         }
     }
 
@@ -83,6 +85,7 @@ export function SavingsGoals({ initialGoals }: { initialGoals: any[] }) {
         } else if (data) {
             setGoals(prev => prev.map(g => g.id === id ? data : g))
             setEditingGoal(null)
+            router.refresh() // Refresh Server Data
         }
     }
 
@@ -101,6 +104,7 @@ export function SavingsGoals({ initialGoals }: { initialGoals: any[] }) {
         } else {
             setGoals(prev => prev.map(g => g.id === topUpGoal.id ? { ...g, current_amount: newTotal } : g))
             setTopUpGoal(null)
+            router.refresh() // Refresh Server Data
         }
     }
 
@@ -113,6 +117,7 @@ export function SavingsGoals({ initialGoals }: { initialGoals: any[] }) {
             alert("Error deleting goal")
         } else {
             setGoals(prev => prev.filter(g => g.id !== id))
+            router.refresh() // Refresh Server Data
         }
     }
 

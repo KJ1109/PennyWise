@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Plus, Trash2, Zap, Wifi, Home, CreditCard, Check, AlertCircle, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/budget'
+import { useRouter } from 'next/navigation'
 
 // Map categories to icons
 const CATEGORY_ICONS: Record<string, any> = {
@@ -24,6 +25,7 @@ export function UpcomingPayments({ initialPayments }: { initialPayments: any[] }
     const [loading, setLoading] = useState(false)
     const [isCustomCategory, setIsCustomCategory] = useState(false)
     const [editingPayment, setEditingPayment] = useState<any>(null)
+    const router = useRouter()
 
     // Sync state if props change (re-fetch from parent)
     useEffect(() => {
@@ -97,6 +99,7 @@ export function UpcomingPayments({ initialPayments }: { initialPayments: any[] }
             setIsOpen(false)
             setEditingPayment(null)
             setIsCustomCategory(false)
+            router.refresh() // Refresh Server Data
         }
         setLoading(false)
     }
@@ -110,6 +113,7 @@ export function UpcomingPayments({ initialPayments }: { initialPayments: any[] }
             alert("Error deleting payment")
         } else {
             setPayments(prev => prev.filter(p => p.id !== id))
+            router.refresh() // Refresh Server Data
         }
     }
 

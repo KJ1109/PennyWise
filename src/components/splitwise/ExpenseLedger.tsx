@@ -5,6 +5,7 @@ import { EditGroupExpenseDialog } from './EditGroupExpenseDialog'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 interface ExpenseLedgerProps {
     expenses: any[]
@@ -16,6 +17,7 @@ interface ExpenseLedgerProps {
 export function ExpenseLedger({ expenses, members, groupId, currentUserId }: ExpenseLedgerProps) {
     const [editingExpense, setEditingExpense] = useState<any>(null)
     const [deletingId, setDeletingId] = useState<string | null>(null)
+    const router = useRouter()
 
     const handleDelete = async (expenseId: string) => {
         if (!confirm('Are you sure you want to delete this expense?')) return
@@ -32,7 +34,7 @@ export function ExpenseLedger({ expenses, members, groupId, currentUserId }: Exp
             alert('Failed to delete expense: ' + error.message)
             setDeletingId(null)
         } else {
-            window.location.reload()
+            router.refresh()
         }
     }
 
