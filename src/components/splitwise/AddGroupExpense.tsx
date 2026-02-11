@@ -197,7 +197,7 @@ export function AddGroupExpense({ groupId, members, userId }: { groupId: string,
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 pt-[calc(1rem+env(safe-area-inset-top))]">
             <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-gray-900 dark:border dark:border-gray-800 flex flex-col max-h-[90vh]">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold dark:text-white">Add Expense</h2>
