@@ -13,31 +13,32 @@ export function CapacitorAuthListener() {
             console.log("App opened with URL:", url)
 
             // Check if it's our auth callback
-            // The URL might look like: pennywise://auth-callback#access_token=...&refresh_token=...
             if (url.startsWith('pennywise://auth-callback')) {
                 const supabase = createSupabaseBrowser()
 
-                // Parse the hash
-                const hashIndex = url.indexOf('#')
-                if (hashIndex !== -1) {
-                    const hash = url.substring(hashIndex + 1)
-                    const params = new URLSearchParams(hash)
-                    const accessToken = params.get('access_token')
-                    const refreshToken = params.get('refresh_token')
+                try {
+                    // Parse the URL to get the code
+                    const parsedUrl = new URL(url)
+                    const code = parsedUrl.searchParams.get('code')
 
-                    if (accessToken && refreshToken) {
-                        const { error } = await supabase.auth.setSession({
-                            access_token: accessToken,
-                            refresh_token: refreshToken
-                        })
+                    console.log("OAuth code:", code)
 
-                        if (!error) {
-                            // Successfully logged in
-                            // Force a router refresh to update server components and redirect to home
-                            router.refresh()
-                            router.replace('/')
+                    if (code) {
+                        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+                        console.log("Exchange result:", data, error)
+
+                        if (error) {
+                            console.error("Session exchange failed:", error)
+                            return
                         }
+
+                        // Now the user is logged in
+                        router.refresh()
+                        router.replace('/')
                     }
+                } catch (err) {
+                    console.error("Deep link handling error:", err)
                 }
             }
         }
