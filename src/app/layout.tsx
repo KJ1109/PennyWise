@@ -43,7 +43,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
 
-        // ... (inside default function RootLayout)
+
 
         <ThemeProvider
           attribute="class"
