@@ -12,9 +12,10 @@ interface ExpenseLedgerProps {
     members: any[]
     groupId: string
     currentUserId: string
+    onUpdate?: () => void
 }
 
-export function ExpenseLedger({ expenses, members, groupId, currentUserId }: ExpenseLedgerProps) {
+export function ExpenseLedger({ expenses, members, groupId, currentUserId, onUpdate }: ExpenseLedgerProps) {
     const [editingExpense, setEditingExpense] = useState<any>(null)
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const router = useRouter()
@@ -34,6 +35,7 @@ export function ExpenseLedger({ expenses, members, groupId, currentUserId }: Exp
             alert('Failed to delete expense: ' + error.message)
             setDeletingId(null)
         } else {
+            onUpdate?.()
             router.refresh()
         }
     }
@@ -122,6 +124,7 @@ export function ExpenseLedger({ expenses, members, groupId, currentUserId }: Exp
                     groupId={groupId}
                     members={members}
                     userId={currentUserId}
+                    onUpdate={onUpdate}
                 />
             )}
         </div>

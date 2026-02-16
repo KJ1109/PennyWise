@@ -15,6 +15,7 @@ interface AnalyticsContentProps {
     spentThisMonth: number
     spentThisWeek: number
     spentToday: number
+    userId: string
 }
 
 export function AnalyticsContent({
@@ -22,7 +23,8 @@ export function AnalyticsContent({
     allExpenses,
     spentThisMonth,
     spentThisWeek,
-    spentToday
+    spentToday,
+    userId
 }: AnalyticsContentProps) {
     return (
         <div className="grid grid-cols-12 gap-6">
@@ -38,7 +40,7 @@ export function AnalyticsContent({
 
             {/* Heavy Charts Isolated */}
             <Suspense fallback={<div className="col-span-12 lg:col-span-7 h-[350px] w-full animate-pulse rounded-3xl bg-muted/50" />}>
-                <ChartsIsland allExpenses={allExpenses} monthlyBudget={monthlyBudget} />
+                <ChartsIsland allExpenses={allExpenses} monthlyBudget={monthlyBudget} userId={userId} />
             </Suspense>
         </div>
     )

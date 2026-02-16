@@ -7,9 +7,10 @@ import { AdvancedAnalytics } from '@/components/analytics/AdvancedAnalytics'
 interface ChartsIslandProps {
     allExpenses: any[]
     monthlyBudget: number
+    userId: string
 }
 
-export function ChartsIsland({ allExpenses, monthlyBudget }: ChartsIslandProps) {
+export function ChartsIsland({ allExpenses, monthlyBudget, userId }: ChartsIslandProps) {
     return (
         <>
             <div className="col-span-12 lg:col-span-7 h-auto md:h-[350px]">
@@ -18,7 +19,7 @@ export function ChartsIsland({ allExpenses, monthlyBudget }: ChartsIslandProps) 
 
             {/* Row 2 */}
             <div className="col-span-12 lg:col-span-8 h-auto md:h-[550px]">
-                <CategoryAnalytics expenses={allExpenses} />
+                <CategoryAnalytics expenses={allExpenses} userId={userId} />
             </div>
             <div className="col-span-12 lg:col-span-4 h-auto md:h-[550px]">
                 <AdvancedAnalytics expenses={allExpenses} monthlyBudget={monthlyBudget} />

@@ -76,6 +76,7 @@ async function AnalyticsData() {
             spentThisMonth={spentThisMonth}
             spentThisWeek={spentThisWeek}
             spentToday={spentToday}
+            userId={user.id}
         />
     )
 

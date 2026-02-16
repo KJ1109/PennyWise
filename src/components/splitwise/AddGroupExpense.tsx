@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 
 type SplitType = 'equal' | 'exact' | 'percentage' | 'shares'
 
-export function AddGroupExpense({ groupId, members, userId }: { groupId: string, members: any[], userId: string }) {
+export function AddGroupExpense({ groupId, members, userId, onUpdate }: { groupId: string, members: any[], userId: string, onUpdate?: () => void }) {
     const [isOpen, setIsOpen] = useState(false)
     const [amount, setAmount] = useState('')
     const [description, setDescription] = useState('')
@@ -179,6 +179,7 @@ export function AddGroupExpense({ groupId, members, userId }: { groupId: string,
             setIsOpen(false)
             setSplitValues({})
             setPayerId(userId)
+            onUpdate?.()
             router.refresh()
         }
         setLoading(false)

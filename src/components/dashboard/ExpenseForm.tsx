@@ -5,8 +5,10 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { useCategories } from '@/lib/categories'
 
 export function ExpenseForm({ userId, children }: { userId: string, children: React.ReactNode }) {
+    const { uiCategories } = useCategories(userId)
     const [isOpen, setIsOpen] = useState(false)
     // Use local time for default date (YYYY-MM-DD) to prevent "yesterday" bug in positive timezones
     const [date, setDate] = useState(() => {
@@ -92,13 +94,9 @@ export function ExpenseForm({ userId, children }: { userId: string, children: Re
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <option value="">Select Category</option>
-                            <option value="Food">Food</option>
-                            <option value="Transport">Transport</option>
-                            <option value="Shopping">Shopping</option>
-                            <option value="Entertainment">Entertainment</option>
-                            <option value="Bills">Bills</option>
-                            <option value="Rent">Rent</option>
-                            <option value="Other">Other</option>
+                            {uiCategories.map((cat: any) => (
+                                <option key={cat.id} value={cat.name}>{cat.name}</option>
+                            ))}
                         </select>
                     </div>
                     <div className="grid gap-2">

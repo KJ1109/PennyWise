@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Plus, X, ArrowRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-export function SettleUpDialog({ groupId, members, userId }: { groupId: string, members: any[], userId: string }) {
+export function SettleUpDialog({ groupId, members, userId, onUpdate }: { groupId: string, members: any[], userId: string, onUpdate?: () => void }) {
     const [isOpen, setIsOpen] = useState(false)
     const [amount, setAmount] = useState('')
     const [loading, setLoading] = useState(false)
@@ -143,7 +143,7 @@ export function SettleUpDialog({ groupId, members, userId }: { groupId: string, 
         } else {
             setAmount('')
             setIsOpen(false)
-            window.location.reload()
+            onUpdate?.()
         }
         setLoading(false)
     }

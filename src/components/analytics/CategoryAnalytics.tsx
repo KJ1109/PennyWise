@@ -12,31 +12,19 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTheme } from 'next-themes'
+import { useCategories, getCategoryIcon } from '@/lib/categories'
 
 const PINK_COLORS = ['#EF2B7C', '#FF69B4', '#F7A1C4', '#CA054D', '#FFB7D5', '#E04F80', '#FF85C0', '#F9A8D4', '#BE185D', '#9D174D']
 const DEFAULT_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#ffc658', '#FF6B6B', '#a0c4ff', '#bdb2ff', '#ffc6ff']
 const DARK_COLORS = ['#a855f7', '#10b981', '#f59e0b', '#f43f5e', '#06b6d4', '#6366f1', '#84cc16', '#f97316', '#ec4899', '#cbd5e1']
 const BLUE_COLORS = ['#0F52BA', '#A6C5D7', '#D6E6F3', '#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#1d4ed8', '#1e40af']
 
-const CATEGORY_ICONS: Record<string, any> = {
-    Food: Utensils,
-    Transport: Car,
-    Shopping: ShoppingBag,
-    Entertainment: Gamepad2,
-    Bills: Zap,
-    Rent: Home,
-    Travel: Plane,
-    Gifts: Gift,
-    Other: Package
-}
-
-export function CategoryAnalytics({ expenses }: { expenses: any[] }) {
+export function CategoryAnalytics({ expenses, userId }: { expenses: any[], userId: string }) {
     const { theme, resolvedTheme } = useTheme()
     const [mounted, setMounted] = useState(false)
+    const { uiCategories, categories: customCategories } = useCategories(userId)
 
     useEffect(() => setMounted(true), [])
-
-
 
     const currentTheme = resolvedTheme || theme
     const isPink = currentTheme === 'pink'
@@ -61,16 +49,23 @@ export function CategoryAnalytics({ expenses }: { expenses: any[] }) {
     const [selectedCategory, setSelectedCategory] = useState<string>('All')
     const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined)
 
+    // Helper to get icon for a given category name (using shared logic)
+    const getIconForCategory = (catName: string) => {
+        const customCat = customCategories.find(c => c.name === catName)
+        return getCategoryIcon(catName, customCat?.icon)
+    }
+
     // 1. Extract Unique Categories & Years
     const categories = useMemo(() => {
-        const PREDEFINED_CATEGORIES = ['Food', 'Transport', 'Shopping', 'Entertainment', 'Bills', 'Rent', 'Other']
+        // We use all categories present in the EXPENSES data + UI Categories
+        // This ensures archived categories with historical data are shown
         const dynamicCats = new Set(expenses.map(e => e.category))
 
-        // Merge predefined with any other found in data
-        const allCats = new Set([...PREDEFINED_CATEGORIES, ...Array.from(dynamicCats)])
+        // Also include all defined UI categories (so selector has them even if 0 spend)
+        uiCategories.forEach(c => dynamicCats.add(c.name))
 
-        return ['All', ...Array.from(allCats)].sort()
-    }, [expenses])
+        return ['All', ...Array.from(dynamicCats)].sort()
+    }, [expenses, uiCategories])
 
     const years = useMemo(() => {
         return Array.from(new Set(expenses.map(e => new Date(e.date).getFullYear()))).sort((a, b) => b - a)
@@ -268,7 +263,7 @@ export function CategoryAnalytics({ expenses }: { expenses: any[] }) {
                 <div className="flex items-center gap-4 p-3 rounded-2xl bg-gray-50 dark:bg-slate-800/30 border border-transparent hover:border-gray-200 dark:hover:border-white/5 transition-all">
                     <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 shrink-0">
                         {(() => {
-                            const Icon = CATEGORY_ICONS[insights.topCategory.name] || Package
+                            const Icon = getIconForCategory(insights.topCategory.name)
                             return <Icon size={20} />
                         })()}
                     </div>

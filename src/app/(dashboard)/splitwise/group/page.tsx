@@ -37,88 +37,99 @@ export default function GroupDetailPage() {
         }
     }, [])
 
-    useEffect(() => {
-        async function loadGroupData() {
-            if (!groupId) return
+    const loadGroupData = async () => {
+        if (!groupId) return
 
-            const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
 
-            if (!user) {
-                router.replace('/login')
-                return
-            }
-            setUser(user)
+        if (!user) {
+            router.replace('/login')
+            return
+        }
+        setUser(user)
 
-            // 1. Fetch Group Details
-            const { data: groupData, error: groupError } = await supabase
-                .from('groups')
-                .select('*')
-                .eq('id', groupId)
-                .single()
+        // 1. Fetch Group Details
+        const { data: groupData, error: groupError } = await supabase
+            .from('groups')
+            .select('*')
+            .eq('id', groupId)
+            .single()
 
-            if (groupError || !groupData) {
-                // Handle 404 or Access Denied
-                setLoading(false)
-                return
-            }
+        if (groupError || !groupData) {
+            // Handle 404 or Access Denied
+            setLoading(false)
+            return
+        }
 
-            // 2. Parallel Fetch: Members (Real + Manual) & Expenses
-            const [
-                { data: realMembers },
-                { data: manualMembersResult },
-                { data: expenseData }
-            ] = await Promise.all([
-                supabase.from('group_members').select('user_id, profiles(full_name, avatar_url)').eq('group_id', groupId),
-                supabase.from('manual_members').select('*').eq('group_id', groupId),
-                supabase.from('group_expenses').select(`
+        // 2. Parallel Fetch: Members (Real + Manual) & Expenses
+        const [
+            { data: realMembers },
+            { data: manualMembersResult },
+            { data: expenseData }
+        ] = await Promise.all([
+            supabase.from('group_members').select('user_id, profiles(full_name, avatar_url)').eq('group_id', groupId),
+            supabase.from('manual_members').select('*').eq('group_id', groupId),
+            supabase.from('group_expenses').select(`
                     *,
                     profiles(full_name),
                     manual_members(name),
                     expense_splits(user_id, manual_member_id, amount_owed)
                 `).eq('group_id', groupId).order('date', { ascending: false })
-            ])
+        ])
 
-            // Normalize Members
-            const allMembers = [
-                ...(realMembers || []).map((m: any) => ({
-                    id: m.user_id,
-                    name: m.profiles?.full_name || 'Unknown',
-                    avatarUrl: m.profiles?.avatar_url,
-                    type: 'user' as const
-                })),
-                ...(manualMembersResult || []).map((m: any) => ({
-                    id: m.id,
-                    name: m.name,
-                    type: 'manual' as const
-                }))
-            ]
+        // Normalize Members
+        const allMembers = [
+            ...(realMembers || []).map((m: any) => ({
+                id: m.user_id,
+                name: m.profiles?.full_name || 'Unknown',
+                avatarUrl: m.profiles?.avatar_url,
+                type: 'user' as const
+            })),
+            ...(manualMembersResult || []).map((m: any) => ({
+                id: m.id,
+                name: m.name,
+                type: 'manual' as const
+            }))
+        ]
 
-            // Calculate Balances
-            const safeExpenses = expenseData || []
-            const newBalances: Record<string, number> = {}
-            allMembers.forEach(m => newBalances[m.id] = 0)
+        // Calculate Balances
+        const safeExpenses = expenseData || []
+        const newBalances: Record<string, number> = {}
+        allMembers.forEach(m => newBalances[m.id] = 0)
 
-            safeExpenses.forEach((e: any) => {
-                const payerId = e.payer_id || e.manual_payer_id
-                if (payerId) {
-                    newBalances[payerId] = (newBalances[payerId] || 0) + Number(e.amount)
+        safeExpenses.forEach((e: any) => {
+            const payerId = e.payer_id || e.manual_payer_id
+            if (payerId) {
+                newBalances[payerId] = (newBalances[payerId] || 0) + Number(e.amount)
+            }
+            e.expense_splits.forEach((s: any) => {
+                const memberId = s.user_id || s.manual_member_id
+                if (memberId) {
+                    newBalances[memberId] = (newBalances[memberId] || 0) - Number(s.amount_owed)
                 }
-                e.expense_splits.forEach((s: any) => {
-                    const memberId = s.user_id || s.manual_member_id
-                    if (memberId) {
-                        newBalances[memberId] = (newBalances[memberId] || 0) - Number(s.amount_owed)
-                    }
-                })
             })
+        })
 
-            setGroup(groupData)
-            setMembers(allMembers)
-            setExpenses(safeExpenses)
-            setBalances(newBalances)
+        setGroup(groupData)
+        setMembers(allMembers)
+        setExpenses(safeExpenses)
+        setBalances(newBalances)
+        setLoading(false)
+    }
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search)
+        const id = params.get('id')
+        if (id) {
+            setGroupId(id)
+        } else {
             setLoading(false)
+            // Optionally redirect
         }
+    }, [])
 
+    useEffect(() => {
         if (groupId) {
             loadGroupData()
         }
@@ -153,8 +164,8 @@ export default function GroupDetailPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <SettleUpDialog groupId={groupId} members={members} userId={user.id} />
-                    <AddGroupExpense groupId={groupId} members={members} userId={user.id} />
+                    <SettleUpDialog groupId={groupId} members={members} userId={user.id} onUpdate={loadGroupData} />
+                    <AddGroupExpense groupId={groupId} members={members} userId={user.id} onUpdate={loadGroupData} />
                 </div>
             </div>
 
@@ -203,6 +214,7 @@ export default function GroupDetailPage() {
                                 members={members}
                                 groupId={groupId}
                                 currentUserId={user.id}
+                                onUpdate={loadGroupData}
                             />
                         </div>
                     </div>

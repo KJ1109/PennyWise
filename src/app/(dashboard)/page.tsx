@@ -67,7 +67,7 @@ export default async function DashboardPage() {
 
                         {/* Right Grid: Categories */}
                         <div className="col-span-12 lg:col-span-7">
-                            <CategoryGrid expenses={expenses} />
+                            <CategoryGrid expenses={expenses} userId={user.id} />
                         </div>
                     </div>
 

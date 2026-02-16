@@ -10,21 +10,15 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet"
 import { formatCurrency } from '@/lib/budget'
-import { ShoppingBag, Coffee, Car, Film, Receipt, Home, HelpCircle, Pencil, Trash2 } from 'lucide-react'
+import { HelpCircle, Pencil, Trash2, Settings, MoreVertical } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { EditExpenseDialog } from './EditExpenseDialog'
 import { createClient } from '@/lib/supabase/client'
-
-// Icon mapping
-const categoryIcons: Record<string, any> = {
-    'Food': Coffee,
-    'Transport': Car,
-    'Shopping': ShoppingBag,
-    'Entertainment': Film,
-    'Bills': Receipt,
-    'Rent': Home,
-    'Other': HelpCircle
-}
+import { useCategories, getCategoryIcon, Category } from '@/lib/categories'
+import { AddCategoryDialog } from './AddCategoryDialog'
+import { EditCategoryDialog } from './EditCategoryDialog'
+import { CategoryManager } from './CategoryManager'
+import { Button } from '@/components/ui/button'
 
 interface Transaction {
     id: string
@@ -34,11 +28,15 @@ interface Transaction {
     date: string
 }
 
-export function CategoryGrid({ expenses }: { expenses: Transaction[] }) {
+export function CategoryGrid({ expenses, userId }: { expenses: Transaction[], userId: string }) {
+    const { uiCategories, categories: customCategories, refreshCategories } = useCategories(userId)
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
     const [editingExpense, setEditingExpense] = useState<Transaction | null>(null)
+
+    // Custom Category Management State
+    const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null)
 
     const router = useRouter()
     const today = new Date()
@@ -48,14 +46,18 @@ export function CategoryGrid({ expenses }: { expenses: Transaction[] }) {
     // 1. Calculate Statistics for Cards & Drawer Context
     const categoryStats = useMemo(() => {
         const stats: Record<string, { currentMonth: number, yearly: number }> = {}
-        const cats = ['Food', 'Transport', 'Shopping', 'Entertainment', 'Bills', 'Rent', 'Other']
 
-        // Initialize
-        cats.forEach(c => stats[c] = { currentMonth: 0, yearly: 0 })
+        // Initialize with ALL available categories (Default + Custom Active)
+        uiCategories.forEach(c => stats[c.name] = { currentMonth: 0, yearly: 0 })
+
+        // Also ensure any "orphan" or "archived" categories in expenses are tracked
+        expenses.forEach(e => {
+            if (!stats[e.category]) stats[e.category] = { currentMonth: 0, yearly: 0 }
+        })
 
         expenses.forEach(e => {
             const d = new Date(e.date)
-            // Ensure category exists in map
+            // Ensure category exists in map (redundant safety)
             if (!stats[e.category]) stats[e.category] = { currentMonth: 0, yearly: 0 }
 
             // Add to Yearly (Current Year)
@@ -69,7 +71,7 @@ export function CategoryGrid({ expenses }: { expenses: Transaction[] }) {
             }
         })
         return stats
-    }, [expenses, currentYear, currentMonth])
+    }, [expenses, currentYear, currentMonth, uiCategories])
 
     // 2. Filter expenses for the Drawer based on selection
     const drawerExpenses = useMemo(() => {
@@ -109,13 +111,43 @@ export function CategoryGrid({ expenses }: { expenses: Transaction[] }) {
         }
     }
 
+    // Identify if a category is custom and getting its full object for editing
+    const getCustomCategory = (name: string) => {
+        return customCategories.find(c => c.name === name)
+    }
+
+    // Filter out categories that have 0 spending AND are not in the UI list (hidden archived ones with no data)
+    // But we WANT to show all UI categories (even 0 spent)
+    const categoriesToRender = Object.keys(categoryStats).filter(catName => {
+        // Show if it exists in UI Categories OR if it has spending data (historical/archived)
+        const isUiCategory = uiCategories.some(c => c.name === catName)
+        const hasData = categoryStats[catName].yearly > 0 || categoryStats[catName].currentMonth > 0
+        return isUiCategory || hasData
+    }).sort((a, b) => {
+        // Sort: Active UI categories first, then archived/others
+        const aIsUi = uiCategories.some(c => c.name === a)
+        const bIsUi = uiCategories.some(c => c.name === b)
+        if (aIsUi && !bIsUi) return -1
+        if (!aIsUi && bIsUi) return 1
+        return a.localeCompare(b)
+    })
+
     return (
         <section className="space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white blue:text-white">Expenses by Category</h2>
+            <div className="flex justify-between items-center">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white blue:text-white">Expenses by Category</h2>
+                <CategoryManager
+                    userId={userId}
+                    archivedCategories={customCategories.filter(c => c.is_archived)}
+                    onUpdate={refreshCategories}
+                />
+            </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {Object.entries(categoryStats).map(([cat, stat]) => {
-                    const Icon = categoryIcons[cat] || HelpCircle
+                {categoriesToRender.map((cat) => {
+                    const stat = categoryStats[cat]
+                    const customCat = getCustomCategory(cat) // Is it a custom category?
+                    const Icon = getCategoryIcon(cat, customCat?.icon)
                     const isOpen = selectedCategory === cat
 
                     return (
@@ -137,18 +169,32 @@ export function CategoryGrid({ expenses }: { expenses: Transaction[] }) {
                         >
                             <SheetTrigger asChild>
                                 <button
-                                    className="flex flex-col items-start gap-3 p-4 bg-white dark:bg-gray-900 blue:bg-card border dark:border-gray-800 rounded-xl hover:shadow-md transition-all text-left group blue:hover:bg-[#1e3a8a] blue:hover:bg-none hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    className="relative flex flex-col items-start gap-3 p-4 bg-white dark:bg-gray-900 blue:bg-card border dark:border-gray-800 rounded-xl hover:shadow-md transition-all text-left group blue:hover:bg-[#1e3a8a] blue:hover:bg-none hover:bg-gray-50 dark:hover:bg-gray-800"
                                 >
                                     <div className="flex justify-between w-full">
                                         <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors blue:bg-white/10 blue:text-white blue:group-hover:bg-[#D6E6F3] blue:group-hover:text-[#000926]">
                                             <Icon size={20} />
                                         </div>
+                                        {/* Edit Button for Custom Categories */}
+                                        {customCat && !customCat.is_archived && (
+                                            <div
+                                                role="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setCategoryToEdit(customCat)
+                                                }}
+                                                className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                                            >
+                                                <Pencil size={14} />
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="w-full mt-2">
-                                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 blue:text-gray-400 blue:group-hover:text-[#D6E6F3] truncate">{cat}</p>
+                                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 blue:text-gray-400 blue:group-hover:text-[#D6E6F3] truncate pr-2">
+                                            {cat} {customCat?.is_archived && '(Archived)'}
+                                        </p>
                                         <div className="mt-1 flex flex-col">
-                                            {/* Removed Total text here as requested */}
                                             <span className="text-lg font-bold text-gray-900 dark:text-white blue:text-white blue:group-hover:text-[#D6E6F3]">
                                                 {formatCurrency(stat.currentMonth)}
                                             </span>
@@ -248,15 +294,29 @@ export function CategoryGrid({ expenses }: { expenses: Transaction[] }) {
                         </Sheet>
                     )
                 })}
+
+                {/* Add Category Card */}
+                <AddCategoryDialog userId={userId} onCategoryAdded={refreshCategories} />
             </div>
 
-            {/* Edit Dialog */}
+            {/* Edit Dialog - For Expenses */}
             {editingExpense && (
                 <EditExpenseDialog
                     expense={editingExpense}
                     onClose={() => setEditingExpense(null)}
                 />
             )}
+
+            {/* Edit Dialog - For Custom Categories */}
+            {categoryToEdit && (
+                <EditCategoryDialog
+                    category={categoryToEdit}
+                    isOpen={!!categoryToEdit}
+                    onClose={() => setCategoryToEdit(null)}
+                    onUpdate={refreshCategories}
+                />
+            )}
         </section>
     )
 }
+

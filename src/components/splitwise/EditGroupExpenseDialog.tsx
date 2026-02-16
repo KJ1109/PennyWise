@@ -12,7 +12,8 @@ export function EditGroupExpenseDialog({
     expense,
     groupId,
     members,
-    userId
+    userId,
+    onUpdate
 }: {
     isOpen: boolean
     onClose: () => void
@@ -20,6 +21,7 @@ export function EditGroupExpenseDialog({
     groupId: string
     members: any[]
     userId: string
+    onUpdate?: () => void
 }) {
     const [amount, setAmount] = useState(expense.amount.toString())
     const [description, setDescription] = useState(expense.description)
@@ -182,7 +184,7 @@ export function EditGroupExpenseDialog({
             alert('Failed to insert new splits: ' + insertError.message)
         } else {
             onClose()
-            window.location.reload()
+            onUpdate?.()
         }
         setLoading(false)
     }
