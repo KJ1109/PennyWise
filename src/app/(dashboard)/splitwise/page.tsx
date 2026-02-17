@@ -38,7 +38,7 @@ export default async function SplitwisePage() {
             .order('created_at', { ascending: false })
     ])
 
-    const groups = members?.map((m: any) => m.groups) || []
+    const groups = members?.map((m: any) => m.groups).filter((g: any) => g !== null) || []
     const pendingInvites = invites || []
 
     return (

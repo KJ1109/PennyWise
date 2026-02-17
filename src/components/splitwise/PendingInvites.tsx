@@ -73,10 +73,10 @@ export function PendingInvites({ invites, onRespond }: PendingInvitesProps) {
                         </div>
                         <div className="flex-1 overflow-hidden">
                             <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                                {invite.groups.name}
+                                {invite.groups?.name || 'Unknown Group'}
                             </p>
                             <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                                Invited by {invite.profiles.full_name}
+                                Invited by {invite.profiles?.full_name || 'Unknown User'}
                             </p>
                             <div className="mt-2 flex gap-2">
                                 <button

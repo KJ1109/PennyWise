@@ -5,6 +5,7 @@ import { createSupabaseBrowser } from '@/lib/supabase/client'
 import { User, Wallet, Upload, Check } from 'lucide-react'
 import { formatCurrency } from '@/lib/budget'
 import { ProfileData } from './SettingsContent'
+import { useRouter } from 'next/navigation'
 
 interface ProfileSectionProps {
     profile: ProfileData | null
@@ -14,6 +15,7 @@ interface ProfileSectionProps {
 export function ProfileSection({ profile, setProfile }: ProfileSectionProps) {
     const [saving, setSaving] = useState(false)
     const [uploading, setUploading] = useState(false)
+    const router = useRouter()
 
     const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         try {
@@ -48,6 +50,7 @@ export function ProfileSection({ profile, setProfile }: ProfileSectionProps) {
             if (updateError) throw updateError
 
             setProfile(prev => prev ? ({ ...prev, avatar_url: publicUrl }) : null)
+            router.refresh()
         } catch (error: any) {
             console.error(error)
             alert('Error uploading avatar: ' + error.message)
@@ -86,6 +89,7 @@ export function ProfileSection({ profile, setProfile }: ProfileSectionProps) {
                 monthly_budget: monthlyBudget,
                 currency: currency
             }) : null)
+            router.refresh()
             alert('Profile Updated!')
         }
         setSaving(false)
