@@ -5,11 +5,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { Plus } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export function AddCategoryDialog({ userId, onCategoryAdded }: { userId: string, onCategoryAdded?: () => void }) {
     const [isOpen, setIsOpen] = useState(false)
     const [name, setName] = useState('')
     const [loading, setLoading] = useState(false)
+    const router = useRouter()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -32,6 +34,7 @@ export function AddCategoryDialog({ userId, onCategoryAdded }: { userId: string,
             setName('')
             setIsOpen(false)
             onCategoryAdded?.()
+            router.refresh()
         }
         setLoading(false)
     }

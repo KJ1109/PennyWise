@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -8,8 +8,16 @@ import { Button } from '@/components/ui/button'
 import { useCategories } from '@/lib/categories'
 
 export function ExpenseForm({ userId, children }: { userId: string, children: React.ReactNode }) {
-    const { uiCategories } = useCategories(userId)
+    const { uiCategories, refreshCategories } = useCategories(userId)
     const [isOpen, setIsOpen] = useState(false)
+
+    // Refresh categories whenever the dialog opens to ensure new custom categories are visible
+    useEffect(() => {
+        if (isOpen) {
+            refreshCategories()
+        }
+    }, [isOpen, refreshCategories])
+    
     // Use local time for default date (YYYY-MM-DD) to prevent "yesterday" bug in positive timezones
     const [date, setDate] = useState(() => {
         const d = new Date()
