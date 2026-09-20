@@ -65,12 +65,12 @@ export function AuthForm() {
             console.log("Is native:", isNative)
 
             if (isNative) {
-                const url = 'pennywise://auth-callback'
+                const url = 'pennywise://auth-callback?next=/dashboard'
                 console.log("RedirectTo:", url)
                 return url
             }
             // Web: Redirect to Server-Side Route for Cookie Exchange
-            const url = `${window.location.origin}/auth/callback`
+            const url = `${window.location.origin}/auth/callback?next=/dashboard`
             console.log("RedirectTo:", url)
             return url
         }

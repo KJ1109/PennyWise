@@ -7,6 +7,9 @@ export async function middleware(request: NextRequest) {
             headers: request.headers,
         },
     })
+    
+    // Prevent browsers from caching pages (solves the back-button-after-logout issue)
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
 
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
