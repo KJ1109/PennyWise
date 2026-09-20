@@ -46,7 +46,8 @@ export async function middleware(request: NextRequest) {
     // Actually, usually '/' is the dashboard.
 
     const isAuthRoute = path.startsWith('/auth') || path === '/login'
-    const isPublicRoute = path === '/auth/auth-code-error' // Add others if needed
+    // '/' is the landing page - public for all users
+    const isPublicRoute = path === '/' || path === '/auth/auth-code-error'
 
     if (!user && !isAuthRoute && !isPublicRoute) {
         // Redirect unauthenticated users to login
@@ -56,9 +57,9 @@ export async function middleware(request: NextRequest) {
     }
 
     if (user && path === '/login') {
-        // Redirect authenticated users away from login
+        // Redirect authenticated users away from login to dashboard
         const url = request.nextUrl.clone()
-        url.pathname = '/'
+        url.pathname = '/dashboard'
         return NextResponse.redirect(url)
     }
 
@@ -78,6 +79,6 @@ export const config = {
          * - favicon.ico (favicon file)
          * Feel free to modify this pattern to include more paths.
          */
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|glb)$).*)',
     ],
 }

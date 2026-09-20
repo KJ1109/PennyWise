@@ -3,7 +3,7 @@ import { Home, Users, Search, Settings, PieChart } from 'lucide-react'
 export const NAV_ITEMS = [
     {
         label: 'Home',
-        href: '/',
+        href: '/dashboard',
         icon: Home,
     },
     {

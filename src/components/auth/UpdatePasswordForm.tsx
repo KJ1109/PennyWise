@@ -43,7 +43,7 @@ export function UpdatePasswordForm() {
 
             // Wait a moment then redirect to login or dashboard
             setTimeout(() => {
-                router.push('/')
+                router.push('/dashboard')
             }, 2000)
 
         } catch (err: any) {

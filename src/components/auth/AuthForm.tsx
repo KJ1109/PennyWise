@@ -114,7 +114,7 @@ export function AuthForm() {
                 if (signInError) throw signInError
 
                 router.refresh()
-                router.push('/')
+                router.push('/dashboard')
             } else if (mode === 'forgot_password') {
                 // Forgot Password Flow
                 const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
